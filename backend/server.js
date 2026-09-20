@@ -77,11 +77,9 @@ const autoCompleteExpiredTrips = async () => {
 setInterval(autoCompleteExpiredTrips, 5 * 60 * 1000);
 autoCompleteExpiredTrips();
 
-// Vercel serverless: export the app
 export default app;
 
-// Local dev: still listen if running directly
-if (process.env.NODE_ENV !== "production") {
+if (!process.env.VERCEL) {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => console.log(`Carpool API running on port ${PORT}`));
 }
