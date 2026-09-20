@@ -18,6 +18,8 @@ export function ThemeProvider({ children }) {
     } else {
       root.classList.remove("dark");
     }
+    root.style.colorScheme = theme;
+    root.setAttribute("data-theme", theme);
     localStorage.setItem("cp_theme", theme);
   }, [theme]);
 
