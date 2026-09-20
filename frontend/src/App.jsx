@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar.jsx";
+import CommandPalette from "./components/CommandPalette.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 import Home from "./pages/Home.jsx";
@@ -24,8 +25,9 @@ import NotFound from "./pages/NotFound.jsx";
 
 export default function App() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 transition-colors">
       <Navbar />
+      <CommandPalette />
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<Home />} />

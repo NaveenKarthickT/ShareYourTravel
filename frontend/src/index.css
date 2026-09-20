@@ -4,12 +4,32 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+html {
+  color-scheme: light dark;
+}
+
 body {
   font-family: 'Inter', system-ui, sans-serif;
   background-color: #F8FAFC;
   color: #0F172A;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
+
+.dark body {
+  background-color: #020617;
+  color: #E2E8F0;
+}
+
+/* Smooth theme transition for cards and surfaces */
+.dark .bg-white { background-color: #0F172A; }
+.dark .border-slate-200 { border-color: #1E293B; }
+.dark .text-primary { color: #7DD3FC; }
+.dark .bg-slate-50 { background-color: #0F172A; }
+.dark .bg-slate-100 { background-color: #1E293B; }
+.dark .text-slate-800 { color: #E2E8F0; }
+.dark .text-slate-600 { color: #94A3B8; }
+.dark .text-slate-500 { color: #64748B; }
 
 .status-badge { @apply absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide text-white shadow-sm; }
 .status-pending { @apply bg-amber-500; }
@@ -26,3 +46,10 @@ body {
 .btn { @apply inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full font-semibold text-sm transition; }
 .btn-primary { @apply bg-accent text-white shadow-md hover:bg-[#008fad] hover:-translate-y-0.5; }
 .btn-outline { @apply bg-transparent border border-slate-200 text-slate-800 hover:bg-slate-100; }
+.dark .btn-outline { @apply border-slate-700 text-slate-200 hover:bg-slate-800; }
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.dark ::-webkit-scrollbar-thumb { background: #334155; }
