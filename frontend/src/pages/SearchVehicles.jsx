@@ -30,6 +30,7 @@ const EMPTY = { startLocation: "", destination: "", date: "", minSeats: "" };
 export default function SearchVehicles() {
   const { activeOrg } = useAuth();
   const [filters, setFilters] = useState(EMPTY);
+  const [applied, setApplied] = useState(EMPTY); // what's currently reflected in results
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -40,6 +41,7 @@ export default function SearchVehicles() {
       Object.entries(f).forEach(([k, v]) => { if (v) params[k] = v; });
       const { data } = await api.get("/vehicles", { params });
       setResults(data.data);
+      setApplied(f);
     } finally {
       setLoading(false);
     }
@@ -48,7 +50,7 @@ export default function SearchVehicles() {
   useEffect(() => { search(); /* eslint-disable-next-line */ }, []);
 
   const removeFilter = (key) => {
-    const next = { ...filters, [key]: "" };
+    const next = { ...applied, [key]: "" };
     setFilters(next);
     search(next);
   };
@@ -58,7 +60,15 @@ export default function SearchVehicles() {
     search(EMPTY);
   };
 
-  const hasFilters = Object.values(filters).some(Boolean);
+  // Button is enabled only if:
+  //   1. User typed at least one filter  AND  it differs from what's applied
+  //   OR
+  //   2. There are already-applied filters (so Apply acts as a reset/refresh)
+  const typedSomething = Object.values(filters).some(Boolean);
+  const hasAppliedFilters = Object.values(applied).some(Boolean);
+  const filtersChanged = JSON.stringify(filters) !== JSON.stringify(applied);
+
+  const canApply = (typedSomething && filtersChanged) || hasAppliedFilters;
 
   return (
     <div className="flex">
@@ -75,7 +85,7 @@ export default function SearchVehicles() {
               <input
                 value={filters.startLocation}
                 onChange={(e) => setFilters({ ...filters, startLocation: e.target.value })}
-                onKeyDown={(e) => e.key === "Enter" && search()}
+                onKeyDown={(e) => e.key === "Enter" && canApply && search()}
                 className="w-full border border-slate-200 rounded-full pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
               />
             </div>
@@ -87,7 +97,7 @@ export default function SearchVehicles() {
               <input
                 value={filters.destination}
                 onChange={(e) => setFilters({ ...filters, destination: e.target.value })}
-                onKeyDown={(e) => e.key === "Enter" && search()}
+                onKeyDown={(e) => e.key === "Enter" && canApply && search()}
                 className="w-full border border-slate-200 rounded-full pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
               />
             </div>
@@ -113,14 +123,15 @@ export default function SearchVehicles() {
                 min={1}
                 value={filters.minSeats}
                 onChange={(e) => setFilters({ ...filters, minSeats: e.target.value })}
-                onKeyDown={(e) => e.key === "Enter" && search()}
+                onKeyDown={(e) => e.key === "Enter" && canApply && search()}
                 className="w-full border border-slate-200 rounded-full pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
               />
             </div>
           </div>
           <button
             onClick={() => search()}
-            className="flex items-center justify-center gap-1.5 bg-accent text-white rounded-full py-2 text-sm font-semibold hover:bg-[#008fad] transition"
+            disabled={!canApply}
+            className="flex items-center justify-center gap-1.5 bg-accent text-white rounded-full py-2 text-sm font-semibold hover:bg-[#008fad] transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <SearchIcon className="w-4 h-4" />
             Apply
@@ -128,7 +139,7 @@ export default function SearchVehicles() {
         </div>
 
         <FilterChips
-          filters={filters}
+          filters={applied}
           labels={FILTER_LABELS}
           onRemove={removeFilter}
           onClearAll={clearAll}
@@ -142,14 +153,14 @@ export default function SearchVehicles() {
               <SearchIcon className="w-7 h-7 text-accent" />
             </div>
             <h3 className="font-semibold text-slate-800 mb-1">
-              {hasFilters ? "No matching trips" : "No trips posted yet"}
+              {hasAppliedFilters ? "No matching trips" : "No trips posted yet"}
             </h3>
             <p className="text-slate-500 text-sm mb-6 max-w-sm mx-auto">
-              {hasFilters
+              {hasAppliedFilters
                 ? "Try widening your search — different date, fewer seats, or a broader route."
                 : "Start by posting the first trip for your community."}
             </p>
-            {hasFilters ? (
+            {hasAppliedFilters ? (
               <button
                 onClick={clearAll}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50"
