@@ -13,6 +13,7 @@ const links = [
   { to: "/admin/members", label: "Membership Requests" },
   { to: "/admin/vehicles", label: "Vehicles & Trips" },
   { to: "/admin/add-vehicle", label: "Post a Vehicle" },
+  { to: "/admin/analytics", label: "Analytics" },
 ];
 
 const StatCard = ({ label, value }) => (

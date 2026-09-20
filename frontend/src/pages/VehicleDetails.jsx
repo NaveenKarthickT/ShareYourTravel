@@ -7,6 +7,7 @@ import { useNotifications } from "../context/NotificationsContext.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
 import ConfirmModal from "../components/ConfirmModal.jsx";
 import { useToast } from "../components/Toast.jsx";
+import RouteMap from "../components/RouteMap.jsx";
 
 export default function VehicleDetails() {
   const { id } = useParams();
@@ -129,10 +130,21 @@ export default function VehicleDetails() {
           </div>
         </div>
 
-        {vehicle.notes && (
-          <p className="text-sm text-slate-600 mb-6 bg-slate-50 rounded-md p-3">{vehicle.notes}</p>
+       {vehicle.notes && (
+            <p className="text-sm text-slate-600 mb-6 bg-slate-50 rounded-md p-3">{vehicle.notes}</p>
         )}
 
+{/* Route map */}
+<div className="mb-6">
+  <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+    Route map
+  </h2>
+  <RouteMap
+    startLocation={vehicle.startLocation}
+    destination={vehicle.destination}
+    height={280}
+  />
+</div>
         {!isOwner && vehicle.status === "available" && (
           <div id="request" className="flex items-end gap-3 scroll-mt-24 p-4 bg-accent-soft/50 rounded-xl border border-accent/20">
             <div>

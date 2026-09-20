@@ -19,6 +19,7 @@ import Feedback from "./pages/Feedback.jsx";
 import Chat from "./pages/Chat.jsx";
 import AdminDashboard, { MembershipRequests, AdminVehicles } from "./pages/AdminDashboard.jsx";
 import AdminAddVehicle from "./pages/AdminAddVehicle.jsx";
+import AdminAnalytics from "./pages/AdminAnalytics.jsx";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard.jsx";
 import Notifications from "./pages/Notifications.jsx";
 import NotFound from "./pages/NotFound.jsx";
@@ -56,7 +57,7 @@ export default function App() {
           <Route path="/admin/members" element={<ProtectedRoute requireOrg><MembershipRequests /></ProtectedRoute>} />
           <Route path="/admin/vehicles" element={<ProtectedRoute requireOrg><AdminVehicles /></ProtectedRoute>} />
           <Route path="/admin/add-vehicle" element={<ProtectedRoute requireOrg><AdminAddVehicle /></ProtectedRoute>} />
-
+          <Route path="/admin/analytics" element={<ProtectedRoute requireOrg><AdminAnalytics /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

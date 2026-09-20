@@ -18,6 +18,7 @@ import feedbackRoutes from "./src/routes/feedbackRoutes.js";
 import adminRoutes from "./src/routes/adminRoutes.js";
 import messageRoutes from "./src/routes/messageRoutes.js";
 import notificationRoutes from "./src/routes/notificationRoutes.js";
+import analyticsRoutes from "./src/routes/analyticsRoutes.js";
 
 dotenv.config();
 await connectDB();
@@ -42,6 +43,7 @@ app.use("/api/feedback", feedbackRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
