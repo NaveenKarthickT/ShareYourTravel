@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { PlusCircle } from "lucide-react";
 import api from "../api/axios.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import Sidebar from "../components/Sidebar.jsx";
@@ -10,6 +12,7 @@ const links = [
   { to: "/admin", label: "Overview", end: true },
   { to: "/admin/members", label: "Membership Requests" },
   { to: "/admin/vehicles", label: "Vehicles & Trips" },
+  { to: "/admin/add-vehicle", label: "Post a Vehicle" },
 ];
 
 const StatCard = ({ label, value }) => (
@@ -33,8 +36,19 @@ export default function AdminDashboard() {
     <div className="flex">
       <Sidebar links={links} />
       <div className="flex-1 px-6 py-8 max-w-5xl">
-        <h1 className="text-2xl font-bold mb-1 text-primary">Admin dashboard</h1>
-        <p className="text-slate-500 mb-6">Monitoring {activeOrg?.org?.name}</p>
+        <div className="flex items-start justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold mb-1 text-primary">Admin dashboard</h1>
+            <p className="text-slate-500">Monitoring {activeOrg?.org?.name}</p>
+          </div>
+          <Link
+            to="/admin/add-vehicle"
+            className="shrink-0 inline-flex items-center gap-1.5 bg-accent text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-[#008fad]"
+          >
+            <PlusCircle className="w-4 h-4" /> Post a vehicle
+          </Link>
+        </div>
+
         <div className="grid sm:grid-cols-4 gap-4">
           <StatCard label="Total users" value={stats?.totalUsers} />
           <StatCard label="Pending registrations" value={stats?.pending} />
@@ -96,7 +110,7 @@ export function MembershipRequests() {
         {loading ? (
           <div className="text-slate-500">Loading...</div>
         ) : members.length === 0 ? (
-          <div className="text-slate-500 bg-white border border-dashed border-slate-300 rounded-lg p-8 text-center">
+          <div className="text-slate-500 bg-white border border-dashed border-slate-300 rounded-2xl p-12 text-center">
             No {filter || ""} requests.
           </div>
         ) : (
@@ -112,9 +126,13 @@ export function MembershipRequests() {
                   {m.status === "pending" && (
                     <>
                       <button onClick={() => review(m, "approved")}
-                        className="text-xs px-3 py-1.5 rounded-md bg-emerald-600 text-white">Approve</button>
+                        className="text-xs px-3 py-1.5 rounded-md bg-emerald-600 text-white hover:bg-emerald-700">
+                        Approve
+                      </button>
                       <button onClick={() => setConfirmTarget(m)}
-                        className="text-xs px-3 py-1.5 rounded-md bg-rose-600 text-white">Reject</button>
+                        className="text-xs px-3 py-1.5 rounded-md bg-rose-600 text-white hover:bg-rose-700">
+                        Reject
+                      </button>
                     </>
                   )}
                 </div>
@@ -181,7 +199,7 @@ export function AdminVehicles() {
               </thead>
               <tbody>
                 {vehicles.map((v) => (
-                  <tr key={v._id} className="border-t border-slate-100">
+                  <tr key={v._id} className="border-t border-slate-100 hover:bg-slate-50">
                     <td className="p-3 text-slate-800">{v.startLocation} → {v.destination}</td>
                     <td className="p-3 text-slate-600">{v.postedBy?.name}</td>
                     <td className="p-3 text-slate-600">{new Date(v.travelDate).toLocaleDateString()}</td>

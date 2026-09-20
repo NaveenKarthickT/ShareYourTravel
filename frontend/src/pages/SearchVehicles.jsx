@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import Sidebar from "../components/Sidebar.jsx";
 import VehicleCard from "../components/VehicleCard.jsx";
 import { SkeletonGrid } from "../components/Skeleton.jsx";
+import FilterChips from "../components/FilterChips.jsx";
 
 const links = [
   { to: "/dashboard", label: "Overview" },
@@ -17,17 +18,26 @@ const links = [
   { to: "/trips/completed", label: "Completed Trips" },
 ];
 
+const FILTER_LABELS = {
+  startLocation: "From",
+  destination: "To",
+  date: "Date",
+  minSeats: "Min seats",
+};
+
+const EMPTY = { startLocation: "", destination: "", date: "", minSeats: "" };
+
 export default function SearchVehicles() {
   const { activeOrg } = useAuth();
-  const [filters, setFilters] = useState({ startLocation: "", destination: "", date: "", minSeats: "" });
+  const [filters, setFilters] = useState(EMPTY);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const search = async () => {
+  const search = async (f = filters) => {
     setLoading(true);
     try {
       const params = { organization: activeOrg.org._id };
-      Object.entries(filters).forEach(([k, v]) => { if (v) params[k] = v; });
+      Object.entries(f).forEach(([k, v]) => { if (v) params[k] = v; });
       const { data } = await api.get("/vehicles", { params });
       setResults(data.data);
     } finally {
@@ -36,6 +46,17 @@ export default function SearchVehicles() {
   };
 
   useEffect(() => { search(); /* eslint-disable-next-line */ }, []);
+
+  const removeFilter = (key) => {
+    const next = { ...filters, [key]: "" };
+    setFilters(next);
+    search(next);
+  };
+
+  const clearAll = () => {
+    setFilters(EMPTY);
+    search(EMPTY);
+  };
 
   const hasFilters = Object.values(filters).some(Boolean);
 
@@ -46,7 +67,7 @@ export default function SearchVehicles() {
         <h1 className="text-2xl font-bold mb-1 text-primary">Search vehicles</h1>
         <p className="text-slate-500 mb-6">Find a pooling trip in {activeOrg?.org?.name}.</p>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 mb-6 grid sm:grid-cols-5 gap-3 items-end">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 mb-4 grid sm:grid-cols-5 gap-3 items-end">
           <div>
             <label className="block text-xs font-medium mb-1 text-slate-600">From</label>
             <div className="relative">
@@ -54,6 +75,7 @@ export default function SearchVehicles() {
               <input
                 value={filters.startLocation}
                 onChange={(e) => setFilters({ ...filters, startLocation: e.target.value })}
+                onKeyDown={(e) => e.key === "Enter" && search()}
                 className="w-full border border-slate-200 rounded-full pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
               />
             </div>
@@ -65,6 +87,7 @@ export default function SearchVehicles() {
               <input
                 value={filters.destination}
                 onChange={(e) => setFilters({ ...filters, destination: e.target.value })}
+                onKeyDown={(e) => e.key === "Enter" && search()}
                 className="w-full border border-slate-200 rounded-full pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
               />
             </div>
@@ -90,18 +113,26 @@ export default function SearchVehicles() {
                 min={1}
                 value={filters.minSeats}
                 onChange={(e) => setFilters({ ...filters, minSeats: e.target.value })}
+                onKeyDown={(e) => e.key === "Enter" && search()}
                 className="w-full border border-slate-200 rounded-full pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
               />
             </div>
           </div>
           <button
-            onClick={search}
+            onClick={() => search()}
             className="flex items-center justify-center gap-1.5 bg-accent text-white rounded-full py-2 text-sm font-semibold hover:bg-[#008fad] transition"
           >
             <SearchIcon className="w-4 h-4" />
-            Apply filters
+            Apply
           </button>
         </div>
+
+        <FilterChips
+          filters={filters}
+          labels={FILTER_LABELS}
+          onRemove={removeFilter}
+          onClearAll={clearAll}
+        />
 
         {loading ? (
           <SkeletonGrid count={6} />
@@ -120,10 +151,7 @@ export default function SearchVehicles() {
             </p>
             {hasFilters ? (
               <button
-                onClick={() => {
-                  setFilters({ startLocation: "", destination: "", date: "", minSeats: "" });
-                  setTimeout(search, 0);
-                }}
+                onClick={clearAll}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50"
               >
                 Clear filters

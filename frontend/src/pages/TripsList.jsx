@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, X } from "lucide-react";
 import api from "../api/axios.js";
 import Sidebar from "../components/Sidebar.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
 import ConfirmModal from "../components/ConfirmModal.jsx";
 import { useToast } from "../components/Toast.jsx";
 import { useNotifications } from "../context/NotificationsContext.jsx";
+import { SkeletonList } from "../components/Skeleton.jsx";
 
 const links = [
   { to: "/dashboard", label: "Overview" },
@@ -40,10 +41,10 @@ export default function TripsList({ status, title }) {
   const cancel = async (id) => {
     try {
       await api.patch(`/bookings/${id}`, { status: "cancelled" });
-      showToast("Request cancelled", "error");
+      showToast("Booking cancelled", "error");
       load();
     } catch (err) {
-      showToast(err.response?.data?.message || "Could not cancel this request.", "error");
+      showToast(err.response?.data?.message || "Could not cancel", "error");
     }
   };
 
@@ -53,16 +54,27 @@ export default function TripsList({ status, title }) {
       <div className="flex-1 px-6 py-8 max-w-4xl">
         <h1 className="text-2xl font-bold mb-6 text-primary">{title}</h1>
         {loading ? (
-          <div className="text-slate-500">Loading...</div>
+          <SkeletonList count={3} />
         ) : bookings.length === 0 ? (
-          <div className="text-slate-500 bg-white border border-dashed border-slate-300 rounded-lg p-8 text-center">
-            Nothing here yet.
+          <div className="text-slate-500 bg-white border border-dashed border-slate-300 rounded-2xl p-12 text-center">
+            <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
+              <MessageCircle className="w-6 h-6 text-slate-400" />
+            </div>
+            <h3 className="font-semibold text-slate-700 mb-1">Nothing here yet</h3>
+            <p className="text-sm text-slate-500 mb-5">
+              {status === "requested"
+                ? "Browse trips and request a seat to see it here."
+                : "Once you have trips in this category, they'll appear here."}
+            </p>
+            <Link to="/vehicles/search" className="inline-flex px-4 py-2 rounded-md bg-accent text-white text-sm font-medium hover:bg-[#008fad]">
+              Search trips
+            </Link>
           </div>
         ) : (
           <div className="space-y-3">
             {bookings.map((b) => (
-              <div key={b._id} className="bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between">
-                <div>
+              <div key={b._id} className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex-1 min-w-0">
                   <div className="font-medium text-slate-800">
                     {b.vehicle.startLocation} <span className="text-slate-400">→</span> {b.vehicle.destination}
                   </div>
@@ -71,26 +83,53 @@ export default function TripsList({ status, title }) {
                     {" "}Driver: {b.vehicle.postedBy?.name} · {b.seatsRequested} seat(s)
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <StatusBadge status={b.status} />
+
                   {status === "requested" && (
-                    <button onClick={() => setCancelTarget(b)}
-                      className="text-xs px-2 py-1 rounded-md border border-slate-300 hover:bg-slate-50 text-slate-700">
-                      Cancel
+                    <button
+                      onClick={() => setCancelTarget(b)}
+                      className="text-xs px-2.5 py-1 rounded-md border border-slate-300 hover:bg-slate-50 text-slate-700 inline-flex items-center gap-1"
+                    >
+                      <X className="w-3 h-3" /> Cancel
                     </button>
                   )}
-                  {(status === "confirmed" || status === "completed") && (
-                    <Link to={`/chat/${b._id}`}
-                      className="relative text-xs px-2 py-1 rounded-md bg-slate-800 text-white hover:bg-slate-700 flex items-center gap-1">
-                      <MessageCircle className="w-3 h-3" /> Chat
-                      {hasUnreadChat?.(b._id) && (
-                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-white" />
-                      )}
-                    </Link>
+
+                  {status === "confirmed" && (
+                    <>
+                      <Link
+                        to={`/chat/${b._id}`}
+                        className="relative text-xs px-2.5 py-1 rounded-md bg-slate-800 text-white hover:bg-slate-700 flex items-center gap-1"
+                      >
+                        <MessageCircle className="w-3 h-3" /> Chat
+                        {hasUnreadChat?.(b._id) && (
+                          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-white" />
+                        )}
+                      </Link>
+                      <button
+                        onClick={() => setCancelTarget(b)}
+                        className="text-xs px-2.5 py-1 rounded-md border border-rose-200 text-rose-600 hover:bg-rose-50 inline-flex items-center gap-1"
+                      >
+                        <X className="w-3 h-3" /> Cancel
+                      </button>
+                    </>
                   )}
+
                   {status === "completed" && (
-                    <Link to={`/feedback/${b._id}`}
-                      className="text-xs px-2 py-1 rounded-md bg-accent text-white">Leave feedback</Link>
+                    <>
+                      <Link
+                        to={`/chat/${b._id}`}
+                        className="relative text-xs px-2.5 py-1 rounded-md bg-slate-800 text-white hover:bg-slate-700 flex items-center gap-1"
+                      >
+                        <MessageCircle className="w-3 h-3" /> Chat
+                      </Link>
+                      <Link
+                        to={`/feedback/${b._id}`}
+                        className="text-xs px-2.5 py-1 rounded-md bg-accent text-white hover:bg-[#008fad]"
+                      >
+                        Leave feedback
+                      </Link>
+                    </>
                   )}
                 </div>
               </div>
@@ -101,9 +140,13 @@ export default function TripsList({ status, title }) {
 
       <ConfirmModal
         open={!!cancelTarget}
-        title="Cancel this request?"
-        message={cancelTarget ? `Your request for ${cancelTarget.vehicle.startLocation} → ${cancelTarget.vehicle.destination} will be withdrawn.` : ""}
-        confirmLabel="Cancel request"
+        title="Cancel this booking?"
+        message={
+          cancelTarget
+            ? `Your seat on "${cancelTarget.vehicle.startLocation} → ${cancelTarget.vehicle.destination}" will be released.`
+            : ""
+        }
+        confirmLabel="Cancel booking"
         danger
         onCancel={() => setCancelTarget(null)}
         onConfirm={() => { cancel(cancelTarget._id); setCancelTarget(null); }}
