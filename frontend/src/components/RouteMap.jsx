@@ -38,7 +38,7 @@ const hashCode = (str) => {
 
 const fakeCoords = (name, seed = 0) => {
   // Center around Bangalore-ish (12.97, 77.59); offset by hash
-  const h = hashCode(name + seed);
+  const h = hashCode(String(name || "") + seed);
   const latOffset = ((h % 1000) / 1000 - 0.5) * 0.4;
   const lngOffset = (((h >> 10) % 1000) / 1000 - 0.5) * 0.4;
   return [12.9716 + latOffset, 77.5946 + lngOffset];
