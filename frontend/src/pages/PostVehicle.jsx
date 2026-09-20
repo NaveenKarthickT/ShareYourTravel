@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Car, Hash, MapPin, Flag, Calendar, Clock, Users, IndianRupee, FileText, Send } from "lucide-react";
 import api from "../api/axios.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useToast } from "../components/Toast.jsx";
 import Sidebar from "../components/Sidebar.jsx";
 
 const links = [
@@ -18,29 +19,71 @@ const links = [
 export default function PostVehicle() {
   const { activeOrg } = useAuth();
   const navigate = useNavigate();
+  const showToast = useToast();
   const [form, setForm] = useState({
-    vehicleType: "car", vehicleModel: "", vehicleNumber: "",
-    startLocation: "", destination: "", travelDate: "", travelTime: "",
-    totalSeats: 3, farePerSeat: 0, notes: "",
+    vehicleType: "car",
+    vehicleModel: "",
+    vehicleNumber: "",
+    startLocation: "",
+    destination: "",
+    travelDate: "",
+    travelTime: "",
+    totalSeats: 3,
+    farePerSeat: 0,
+    notes: "",
   });
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [touched, setTouched] = useState({});
   const [loading, setLoading] = useState(false);
+
+  const errors = {
+    startLocation: touched.startLocation && !form.startLocation.trim(),
+    destination: touched.destination && !form.destination.trim(),
+    travelDate: touched.travelDate && !form.travelDate,
+    travelTime: touched.travelTime && !form.travelTime,
+    totalSeats: touched.totalSeats && (!form.totalSeats || form.totalSeats < 1),
+  };
+
+  const canSubmit =
+    form.startLocation.trim() &&
+    form.destination.trim() &&
+    form.travelDate &&
+    form.travelTime &&
+    form.totalSeats >= 1 &&
+    !loading;
+
+  const field = (key) => ({
+    value: form[key],
+    onChange: (e) => setForm({ ...form, [key]: e.target.value }),
+    onBlur: () => setTouched((t) => ({ ...t, [key]: true })),
+  });
+
+  const inputClass = (key) =>
+    `w-full border rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 transition ${
+      errors[key]
+        ? "border-rose-400 focus:ring-rose-200"
+        : "border-slate-300 focus:ring-accent"
+    }`;
 
   const submit = async (e) => {
     e.preventDefault();
-    setError(""); setSuccess("");
-    if (!form.startLocation || !form.destination || !form.travelDate || !form.travelTime) {
-      return setError("Please fill in route, date and time.");
-    }
+    setTouched({
+      startLocation: true,
+      destination: true,
+      travelDate: true,
+      travelTime: true,
+      totalSeats: true,
+    });
+    if (!canSubmit) return;
     try {
       setLoading(true);
       await api.post("/vehicles", { ...form, organization: activeOrg.org._id });
-      setSuccess("Trip posted! It is now visible to other members of your community.");
-      setTimeout(() => navigate("/vehicles/search"), 1200);
+      showToast("Trip posted successfully");
+      navigate("/vehicles/search");
     } catch (err) {
-      setError(err.response?.data?.message || "Could not post trip.");
-    } finally { setLoading(false); }
+      showToast(err.response?.data?.message || "Could not post trip", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -48,21 +91,21 @@ export default function PostVehicle() {
       <Sidebar links={links} />
       <div className="flex-1 px-6 py-8 max-w-2xl">
         <h1 className="text-2xl font-bold mb-1 text-primary">Post a vehicle for pooling</h1>
-        <p className="text-slate-500 mb-6">Share your trip so others in {activeOrg?.org?.name} can join.</p>
+        <p className="text-slate-500 mb-6">
+          Share your trip so others in <strong>{activeOrg?.org?.name}</strong> can join.
+        </p>
 
-        <form onSubmit={submit} className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
-          {error && <div className="bg-rose-50 text-rose-700 text-sm px-3 py-2 rounded-md">⚠ {error}</div>}
-          {success && <div className="bg-emerald-50 text-emerald-700 text-sm px-3 py-2 rounded-md">✓ {success}</div>}
-
+        <form onSubmit={submit} className="bg-white border border-slate-200 rounded-xl p-6 space-y-4" noValidate>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium mb-1 text-slate-700">Vehicle type</label>
               <div className="relative">
                 <Car className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                <select value={form.vehicleType} onChange={(e) => setForm({ ...form, vehicleType: e.target.value })}
-                  className="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent">
-                  <option value="car">Car</option><option value="bike">Bike</option>
-                  <option value="van">Van</option><option value="other">Other</option>
+                <select {...field("vehicleType")} className={inputClass("vehicleType")}>
+                  <option value="car">Car</option>
+                  <option value="bike">Bike</option>
+                  <option value="van">Van</option>
+                  <option value="other">Other</option>
                 </select>
               </div>
             </div>
@@ -70,9 +113,7 @@ export default function PostVehicle() {
               <label className="block text-sm font-medium mb-1 text-slate-700">Vehicle model</label>
               <div className="relative">
                 <Car className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input value={form.vehicleModel} onChange={(e) => setForm({ ...form, vehicleModel: e.target.value })}
-                  className="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
-                  placeholder="e.g. Honda City" />
+                <input {...field("vehicleModel")} className={inputClass("vehicleModel")} placeholder="e.g. Honda City" />
               </div>
             </div>
           </div>
@@ -81,47 +122,50 @@ export default function PostVehicle() {
             <label className="block text-sm font-medium mb-1 text-slate-700">Vehicle number</label>
             <div className="relative">
               <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input value={form.vehicleNumber} onChange={(e) => setForm({ ...form, vehicleNumber: e.target.value.toUpperCase() })}
-                className="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
-                placeholder="e.g. TN 59 AB 1234" />
+              <input
+                {...field("vehicleNumber")}
+                onChange={(e) => setForm({ ...form, vehicleNumber: e.target.value.toUpperCase() })}
+                className={inputClass("vehicleNumber")}
+                placeholder="e.g. TN 59 AB 1234"
+              />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700">Starting location</label>
+              <label className="block text-sm font-medium mb-1 text-slate-700">From *</label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input value={form.startLocation} onChange={(e) => setForm({ ...form, startLocation: e.target.value })}
-                  className="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent" />
+                <input {...field("startLocation")} className={inputClass("startLocation")} />
               </div>
+              {errors.startLocation && <p className="text-xs text-rose-600 mt-1">Required</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700">Destination</label>
+              <label className="block text-sm font-medium mb-1 text-slate-700">To *</label>
               <div className="relative">
                 <Flag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input value={form.destination} onChange={(e) => setForm({ ...form, destination: e.target.value })}
-                  className="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent" />
+                <input {...field("destination")} className={inputClass("destination")} />
               </div>
+              {errors.destination && <p className="text-xs text-rose-600 mt-1">Required</p>}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700">Travel date</label>
+              <label className="block text-sm font-medium mb-1 text-slate-700">Date *</label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                <input type="date" value={form.travelDate} onChange={(e) => setForm({ ...form, travelDate: e.target.value })}
-                  className="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent" />
+                <input type="date" {...field("travelDate")} className={inputClass("travelDate")} />
               </div>
+              {errors.travelDate && <p className="text-xs text-rose-600 mt-1">Required</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700">Travel time</label>
+              <label className="block text-sm font-medium mb-1 text-slate-700">Time *</label>
               <div className="relative">
                 <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                <input type="time" value={form.travelTime} onChange={(e) => setForm({ ...form, travelTime: e.target.value })}
-                  className="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent" />
+                <input type="time" {...field("travelTime")} className={inputClass("travelTime")} />
               </div>
+              {errors.travelTime && <p className="text-xs text-rose-600 mt-1">Required</p>}
             </div>
           </div>
 
@@ -130,18 +174,26 @@ export default function PostVehicle() {
               <label className="block text-sm font-medium mb-1 text-slate-700">Available seats</label>
               <div className="relative">
                 <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input type="number" min={1} value={form.totalSeats}
+                <input
+                  type="number"
+                  min={1}
+                  {...field("totalSeats")}
                   onChange={(e) => setForm({ ...form, totalSeats: Number(e.target.value) })}
-                  className="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent" />
+                  className={inputClass("totalSeats")}
+                />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700">Fare per seat (₹, optional)</label>
+              <label className="block text-sm font-medium mb-1 text-slate-700">Fare per seat (₹)</label>
               <div className="relative">
                 <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input type="number" min={0} value={form.farePerSeat}
+                <input
+                  type="number"
+                  min={0}
+                  {...field("farePerSeat")}
                   onChange={(e) => setForm({ ...form, farePerSeat: Number(e.target.value) })}
-                  className="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent" />
+                  className={inputClass("farePerSeat")}
+                />
               </div>
             </div>
           </div>
@@ -150,14 +202,14 @@ export default function PostVehicle() {
             <label className="block text-sm font-medium mb-1 text-slate-700">Notes (optional)</label>
             <div className="relative">
               <FileText className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-              <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                className="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
-                rows={2} />
+              <textarea {...field("notes")} className={inputClass("notes")} rows={2} />
             </div>
           </div>
 
-          <button disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-accent text-white rounded-md py-2.5 font-medium hover:bg-[#008fad] disabled:opacity-60">
+          <button
+            disabled={!canSubmit}
+            className="w-full flex items-center justify-center gap-2 bg-accent text-white rounded-md py-2.5 font-semibold hover:bg-[#008fad] disabled:opacity-60 disabled:cursor-not-allowed transition"
+          >
             <Send className="w-4 h-4" />
             {loading ? "Posting..." : "Post this trip"}
           </button>

@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { MapPin, Flag, Calendar, Users, Search as SearchIcon } from "lucide-react";
+import { Link } from "react-router-dom";
+import { MapPin, Flag, Calendar, Users, Search as SearchIcon, PlusCircle } from "lucide-react";
 import api from "../api/axios.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import Sidebar from "../components/Sidebar.jsx";
 import VehicleCard from "../components/VehicleCard.jsx";
+import { SkeletonGrid } from "../components/Skeleton.jsx";
 
 const links = [
   { to: "/dashboard", label: "Overview" },
@@ -28,10 +30,14 @@ export default function SearchVehicles() {
       Object.entries(filters).forEach(([k, v]) => { if (v) params[k] = v; });
       const { data } = await api.get("/vehicles", { params });
       setResults(data.data);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { search(); /* eslint-disable-next-line */ }, []);
+
+  const hasFilters = Object.values(filters).some(Boolean);
 
   return (
     <div className="flex">
@@ -40,56 +46,100 @@ export default function SearchVehicles() {
         <h1 className="text-2xl font-bold mb-1 text-primary">Search vehicles</h1>
         <p className="text-slate-500 mb-6">Find a pooling trip in {activeOrg?.org?.name}.</p>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-4 mb-6 grid sm:grid-cols-5 gap-3 items-end">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 mb-6 grid sm:grid-cols-5 gap-3 items-end">
           <div>
             <label className="block text-xs font-medium mb-1 text-slate-600">From</label>
             <div className="relative">
-              <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-              <input value={filters.startLocation} onChange={(e) => setFilters({ ...filters, startLocation: e.target.value })}
-                className="w-full border border-slate-300 rounded-md pl-8 pr-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <input
+                value={filters.startLocation}
+                onChange={(e) => setFilters({ ...filters, startLocation: e.target.value })}
+                className="w-full border border-slate-200 rounded-full pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              />
             </div>
           </div>
           <div>
             <label className="block text-xs font-medium mb-1 text-slate-600">To</label>
             <div className="relative">
-              <Flag className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-              <input value={filters.destination} onChange={(e) => setFilters({ ...filters, destination: e.target.value })}
-                className="w-full border border-slate-300 rounded-md pl-8 pr-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              <Flag className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <input
+                value={filters.destination}
+                onChange={(e) => setFilters({ ...filters, destination: e.target.value })}
+                className="w-full border border-slate-200 rounded-full pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              />
             </div>
           </div>
           <div>
             <label className="block text-xs font-medium mb-1 text-slate-600">Date</label>
             <div className="relative">
-              <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-              <input type="date" value={filters.date} onChange={(e) => setFilters({ ...filters, date: e.target.value })}
-                className="w-full border border-slate-300 rounded-md pl-8 pr-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+              <input
+                type="date"
+                value={filters.date}
+                onChange={(e) => setFilters({ ...filters, date: e.target.value })}
+                className="w-full border border-slate-200 rounded-full pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              />
             </div>
           </div>
           <div>
             <label className="block text-xs font-medium mb-1 text-slate-600">Min. seats</label>
             <div className="relative">
-              <Users className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-              <input type="number" min={1} value={filters.minSeats}
+              <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <input
+                type="number"
+                min={1}
+                value={filters.minSeats}
                 onChange={(e) => setFilters({ ...filters, minSeats: e.target.value })}
-                className="w-full border border-slate-300 rounded-md pl-8 pr-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+                className="w-full border border-slate-200 rounded-full pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              />
             </div>
           </div>
-          <button onClick={search}
-            className="flex items-center justify-center gap-1.5 bg-accent text-white rounded-md py-2 text-sm font-medium hover:bg-[#008fad]">
-            <SearchIcon className="w-3.5 h-3.5" />
+          <button
+            onClick={search}
+            className="flex items-center justify-center gap-1.5 bg-accent text-white rounded-full py-2 text-sm font-semibold hover:bg-[#008fad] transition"
+          >
+            <SearchIcon className="w-4 h-4" />
             Apply filters
           </button>
         </div>
 
         {loading ? (
-          <div className="text-slate-500">Loading...</div>
+          <SkeletonGrid count={6} />
         ) : results.length === 0 ? (
-          <div className="text-slate-500 bg-white border border-dashed border-slate-300 rounded-lg p-8 text-center">
-            No trips match your filters.
+          <div className="text-center py-16 bg-white border border-dashed border-slate-300 rounded-2xl">
+            <div className="w-16 h-16 rounded-full bg-accent-soft flex items-center justify-center mx-auto mb-4">
+              <SearchIcon className="w-7 h-7 text-accent" />
+            </div>
+            <h3 className="font-semibold text-slate-800 mb-1">
+              {hasFilters ? "No matching trips" : "No trips posted yet"}
+            </h3>
+            <p className="text-slate-500 text-sm mb-6 max-w-sm mx-auto">
+              {hasFilters
+                ? "Try widening your search — different date, fewer seats, or a broader route."
+                : "Start by posting the first trip for your community."}
+            </p>
+            {hasFilters ? (
+              <button
+                onClick={() => {
+                  setFilters({ startLocation: "", destination: "", date: "", minSeats: "" });
+                  setTimeout(search, 0);
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50"
+              >
+                Clear filters
+              </button>
+            ) : (
+              <Link
+                to="/vehicles/post"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-accent text-white text-sm font-medium hover:bg-[#008fad]"
+              >
+                <PlusCircle className="w-4 h-4" /> Post a trip
+              </Link>
+            )}
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {results.map((v) => <VehicleCard key={v._id} vehicle={v} actionLabel="Request / View details" />)}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {results.map((v) => <VehicleCard key={v._id} vehicle={v} />)}
           </div>
         )}
       </div>

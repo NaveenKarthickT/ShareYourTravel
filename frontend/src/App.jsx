@@ -19,6 +19,7 @@ import Chat from "./pages/Chat.jsx";
 import AdminDashboard, { MembershipRequests, AdminVehicles } from "./pages/AdminDashboard.jsx";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard.jsx";
 import Notifications from "./pages/Notifications.jsx";
+import NotFound from "./pages/NotFound.jsx";
 
 export default function App() {
   return (
@@ -52,7 +53,7 @@ export default function App() {
           <Route path="/admin/members" element={<ProtectedRoute requireOrg><MembershipRequests /></ProtectedRoute>} />
           <Route path="/admin/vehicles" element={<ProtectedRoute requireOrg><AdminVehicles /></ProtectedRoute>} />
 
-          <Route path="*" element={<div className="max-w-2xl mx-auto px-4 py-20 text-center text-slate-500">Page not found.</div>} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
     </div>
