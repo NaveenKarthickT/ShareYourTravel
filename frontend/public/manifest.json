@@ -1,6 +1,6 @@
 {
-  "name": "Share Your Vehicle",
-  "short_name": "SYV",
+  "name": "ShareYourTravel",
+  "short_name": "SYT",
   "description": "Community-based vehicle pooling platform",
   "start_url": "/",
   "display": "standalone",

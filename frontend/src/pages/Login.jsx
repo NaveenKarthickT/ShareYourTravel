@@ -23,7 +23,7 @@ function BrandPanel() {
 
       <div className="relative flex items-center gap-2 font-bold text-lg">
         <Logo size={36} />
-        Share Your Vehicle
+        ShareYourTravel
       </div>
 
       <div className="relative">
@@ -53,7 +53,7 @@ function BrandPanel() {
       </div>
 
       <div className="relative text-white/40 text-xs">
-        © {new Date().getFullYear()} Share Your Vehicle
+        © {new Date().getFullYear()} ShareYourTravel
       </div>
     </div>
   );

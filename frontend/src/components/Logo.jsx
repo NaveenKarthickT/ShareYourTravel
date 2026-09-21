@@ -1,4 +1,4 @@
-// Brand logo — SYV monogram inside a rounded square, with the
+// Brand logo — SYT monogram inside a rounded square, with the
 // route-line motif shared across the app.
 
 export default function Logo({ size = 32, className = "" }) {
@@ -9,7 +9,7 @@ export default function Logo({ size = 32, className = "" }) {
       height={size}
       className={"shrink-0 " + className}
       xmlns="http://www.w3.org/2000/svg"
-      aria-label="Share Your Vehicle"
+      aria-label="ShareYourTravel"
     >
       <defs>
         <linearGradient id="logoBg" x1="0" y1="0" x2="1" y2="1">
@@ -24,7 +24,6 @@ export default function Logo({ size = 32, className = "" }) {
 
       <rect width="64" height="64" rx="16" fill="url(#logoBg)" />
 
-      {/* Dotted route line — start and end pins */}
       <path
         d="M8 42 Q22 24 36 34 Q50 44 56 30"
         stroke="url(#logoMark)"
@@ -37,7 +36,6 @@ export default function Logo({ size = 32, className = "" }) {
       <circle cx="10" cy="44" r="3" fill="#10B981" />
       <circle cx="54" cy="28" r="3" fill="#F43F5E" />
 
-      {/* SYV monogram */}
       <text
         x="32"
         y="40"
@@ -48,7 +46,7 @@ export default function Logo({ size = 32, className = "" }) {
         letterSpacing="-0.5"
         fill="url(#logoMark)"
       >
-        SYV
+        SYT
       </text>
     </svg>
   );
