@@ -10,32 +10,45 @@ const validateName = (v) => v.trim().length >= 2;
 
 function BrandPanel() {
   return (
-    <div className="hidden sm:flex sm:w-2/5 bg-gradient-to-br from-primary to-primary-light text-white p-8 flex-col justify-between">
-      <div className="flex items-center gap-2 font-bold text-lg">
-        <span className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">V</span>
-        ShareYourVehicle
+    <div className="hidden sm:flex sm:w-2/5 relative overflow-hidden bg-gradient-to-br from-accent to-primary text-white p-8 flex-col justify-between">
+      <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-24 -right-24 w-72 h-72 rounded-full bg-primary/30 blur-3xl pointer-events-none" />
+
+      <div className="relative flex items-center gap-2 font-bold text-lg">
+        <span className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center">
+          V
+        </span>
+        Share Your Vehicle
       </div>
-      <div>
+
+      <div className="relative">
         <h2 className="text-2xl font-bold leading-snug mb-4">
           Join a private pooling community.
         </h2>
         <ul className="space-y-3 text-sm text-white/85">
           <li className="flex items-start gap-2.5">
-            <Car className="w-4 h-4 shrink-0 mt-0.5" />
+            <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
+              <ShieldCheck className="w-3 h-3" />
+            </span>
             <span>Verified members only</span>
           </li>
           <li className="flex items-start gap-2.5">
-            <Users2 className="w-4 h-4 shrink-0 mt-0.5" />
+            <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
+              <Users2 className="w-3 h-3" />
+            </span>
             <span>Admin-approved access</span>
           </li>
           <li className="flex items-start gap-2.5">
-            <MapPinned className="w-4 h-4 shrink-0 mt-0.5" />
+            <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
+              <MapPinned className="w-3 h-3" />
+            </span>
             <span>Post &amp; find rides instantly</span>
           </li>
         </ul>
       </div>
-      <div className="text-white/40 text-xs">
-        © {new Date().getFullYear()} ShareYourVehicle
+
+      <div className="relative text-white/40 text-xs">
+        © {new Date().getFullYear()} Share Your Vehicle
       </div>
     </div>
   );

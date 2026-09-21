@@ -4,6 +4,8 @@ import { useAuth } from "../context/AuthContext.jsx";
 import Avatar from "../components/Avatar.jsx";
 import StarRating from "../components/StarRating.jsx";
 import { useToast } from "../components/Toast.jsx";
+import PageHeader from "../components/PageHeader.jsx";
+import { UserCircle2 } from "lucide-react";
 
 const fileToResizedDataUrl = (file, maxSize = 300, quality = 0.8) =>
   new Promise((resolve, reject) => {
@@ -65,7 +67,12 @@ export default function Profile() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-12">
-      <h1 className="text-2xl font-bold text-primary dark:text-sky-300 mb-6">Your profile</h1>
+      <PageHeader
+        icon={UserCircle2}
+        eyebrow="Account"
+        title="Your profile"
+        subtitle="Keep your details up to date so drivers and passengers can reach you."
+      />
       <form onSubmit={submit} className="space-y-6">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 flex items-center gap-6">
           <div className="relative">

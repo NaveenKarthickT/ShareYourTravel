@@ -8,6 +8,8 @@ import ConfirmModal from "../components/ConfirmModal.jsx";
 import { useToast } from "../components/Toast.jsx";
 import { useNotifications } from "../context/NotificationsContext.jsx";
 import { SkeletonList } from "../components/Skeleton.jsx";
+import PageHeader from "../components/PageHeader.jsx";
+import { Route } from "lucide-react";
 
 const links = [
   { to: "/dashboard", label: "Overview" },
@@ -52,7 +54,12 @@ export default function TripsList({ status, title }) {
     <div className="flex">
       <Sidebar links={links} />
       <div className="flex-1 px-6 py-8 max-w-4xl">
-        <h1 className="text-2xl font-bold mb-6 text-primary dark:text-sky-300">{title}</h1>
+        <PageHeader
+        icon={Route}
+        eyebrow="Trips"
+        title={title}
+        subtitle="Everything in one view."
+      />
         {loading ? (
           <SkeletonList count={3} />
         ) : bookings.length === 0 ? (

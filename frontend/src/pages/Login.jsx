@@ -10,32 +10,51 @@ const validatePassword = (v) => v.length >= 6;
 // Shared left panel — brand + value props
 function BrandPanel() {
   return (
-    <div className="hidden sm:flex sm:w-2/5 bg-gradient-to-br from-primary to-primary-light text-white p-8 flex-col justify-between">
-      <div className="flex items-center gap-2 font-bold text-lg">
-        <span className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">V</span>
-        ShareYourVehicle
+    <div className="hidden sm:flex sm:w-2/5 relative overflow-hidden bg-gradient-to-br from-primary via-primary-light to-[#0a2240] text-white p-8 flex-col justify-between">
+      {/* Floating ambient blobs */}
+      <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-accent/20 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
+
+      {/* Floating car icon */}
+      <div className="absolute top-1/3 right-6 opacity-10 pointer-events-none">
+        <Car className="w-32 h-32" />
       </div>
-      <div>
+
+      <div className="relative flex items-center gap-2 font-bold text-lg">
+        <span className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center shadow-inner">
+          V
+        </span>
+        Share Your Vehicle
+      </div>
+
+      <div className="relative">
         <h2 className="text-2xl font-bold leading-snug mb-4">
           Ride with people you actually know.
         </h2>
         <ul className="space-y-3 text-sm text-white/85">
           <li className="flex items-start gap-2.5">
-            <Car className="w-4 h-4 shrink-0 mt-0.5" />
+            <span className="w-5 h-5 rounded-full bg-accent/30 flex items-center justify-center shrink-0 mt-0.5">
+              <Car className="w-3 h-3" />
+            </span>
             <span>Every community runs its own pooling server</span>
           </li>
           <li className="flex items-start gap-2.5">
-            <Users2 className="w-4 h-4 shrink-0 mt-0.5" />
+            <span className="w-5 h-5 rounded-full bg-accent/30 flex items-center justify-center shrink-0 mt-0.5">
+              <Users2 className="w-3 h-3" />
+            </span>
             <span>Admin-approved, private membership</span>
           </li>
           <li className="flex items-start gap-2.5">
-            <MapPinned className="w-4 h-4 shrink-0 mt-0.5" />
+            <span className="w-5 h-5 rounded-full bg-accent/30 flex items-center justify-center shrink-0 mt-0.5">
+              <MapPinned className="w-3 h-3" />
+            </span>
             <span>Route-based trip search &amp; requests</span>
           </li>
         </ul>
       </div>
-      <div className="text-white/40 text-xs">
-        © {new Date().getFullYear()} ShareYourVehicle
+
+      <div className="relative text-white/40 text-xs">
+        © {new Date().getFullYear()} Share Your Vehicle
       </div>
     </div>
   );

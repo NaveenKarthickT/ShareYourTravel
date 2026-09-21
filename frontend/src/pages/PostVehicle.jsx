@@ -65,8 +65,12 @@ export default function PostVehicle() {
     <div className="flex">
       <Sidebar links={links} />
       <div className="flex-1 px-6 py-8 max-w-2xl">
-        <h1 className="text-2xl font-bold mb-1 text-primary dark:text-sky-300">Post a vehicle for pooling</h1>
-        <p className="text-slate-500 mb-6">Share your trip so others in <strong>{activeOrg?.org?.name}</strong> can join.</p>
+        <PageHeader
+        icon={PlusCircle}
+        eyebrow="New trip"
+        title="Post a vehicle for pooling"
+        subtitle={"Share your trip so others in " + (activeOrg?.org?.name || "your community") + " can join."}
+      />
 
         <form onSubmit={submit} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 space-y-4" noValidate>
           <div className="grid grid-cols-2 gap-3">

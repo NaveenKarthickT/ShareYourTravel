@@ -7,6 +7,8 @@ import Sidebar from "../components/Sidebar.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
 import ConfirmModal from "../components/ConfirmModal.jsx";
 import { useToast } from "../components/Toast.jsx";
+import PageHeader from "../components/PageHeader.jsx";
+import { LayoutDashboard as DashIcon } from "lucide-react";
 
 const links = [
   { to: "/admin", label: "Overview", end: true },
@@ -39,8 +41,18 @@ export default function AdminDashboard() {
       <div className="flex-1 px-6 py-8 max-w-5xl">
         <div className="flex items-start justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold mb-1 text-primary dark:text-sky-300">Admin dashboard</h1>
-            <p className="text-slate-500">Monitoring {activeOrg?.org?.name}</p>
+            <PageHeader
+        icon={DashIcon}
+        eyebrow="Admin"
+        title="Admin dashboard"
+        subtitle={"Monitoring " + (activeOrg?.org?.name || "your organization")}
+        action={
+          <Link to="/admin/add-vehicle"
+            className="inline-flex items-center gap-1.5 bg-accent text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-[#008fad]">
+            <PlusCircle className="w-4 h-4" /> Post a vehicle
+          </Link>
+        }
+      />
           </div>
           <Link to="/admin/add-vehicle"
             className="shrink-0 inline-flex items-center gap-1.5 bg-accent text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-[#008fad]">

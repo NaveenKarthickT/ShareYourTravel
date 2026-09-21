@@ -6,6 +6,9 @@ import { useAuth } from "../context/AuthContext.jsx";
 import Sidebar from "../components/Sidebar.jsx";
 import VehicleCard from "../components/VehicleCard.jsx";
 import { SkeletonGrid, SkeletonStatRow } from "../components/Skeleton.jsx";
+import PageHeader from "../components/PageHeader.jsx";
+import AnimatedCard from "../components/AnimatedCard.jsx";
+import { LayoutDashboard } from "lucide-react";
 import CarLoader from "../components/CarLoader.jsx";
 
 const links = [
@@ -49,8 +52,12 @@ export default function UserDashboard() {
     <div className="flex">
       <Sidebar links={links} />
       <div className="flex-1 px-6 py-8 max-w-6xl">
-        <h1 className="text-2xl font-bold mb-1 text-primary dark:text-sky-300">Welcome back</h1>
-        <p className="text-slate-500 mb-6">{activeOrg?.org?.name} community dashboard</p>
+        <PageHeader
+        icon={LayoutDashboard}
+        eyebrow="Dashboard"
+        title="Welcome back"
+        subtitle={(activeOrg?.org?.name || "Your") + " community dashboard"}
+      />
 
         {loading ? (
           <SkeletonStatRow count={3} />
@@ -60,12 +67,14 @@ export default function UserDashboard() {
               ["Confirmed trips", counts.confirmed, "/trips/confirmed"],
               ["Pending requests", counts.requested, "/trips/requests"],
               ["Completed trips", counts.completed, "/trips/completed"],
-            ].map(([label, value, to]) => (
-              <Link key={label} to={to}
-                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 hover:border-accent hover:shadow-sm transition">
-                <div className="text-3xl font-bold text-primary dark:text-sky-300">{value}</div>
-                <div className="text-sm text-slate-500 mt-1">{label}</div>
-              </Link>
+            ].map(([label, value, to], i) => (
+              <AnimatedCard key={label} delay={i * 80}>
+                <Link to={to}
+                  className="block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 hover:border-accent hover:shadow-md hover:-translate-y-0.5 transition">
+                  <div className="text-3xl font-bold text-primary dark:text-sky-300">{value}</div>
+                  <div className="text-sm text-slate-500 mt-1">{label}</div>
+                </Link>
+              </AnimatedCard>
             ))}
           </div>
         )}
