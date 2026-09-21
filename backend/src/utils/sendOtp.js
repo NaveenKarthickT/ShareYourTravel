@@ -10,9 +10,9 @@ const transporter = nodemailer.createTransport({
 
 export const sendOtpEmail = async (to, otp, name = "there") => {
   const mailOptions = {
-    from: '"Velocity Pool" <' + process.env.SMTP_USER + '>',
+    from: '"ShareYourVehicle" <' + process.env.SMTP_USER + '>',
     to,
-    subject: "Your Velocity Pool verification code",
+    subject: "Your ShareYourVehicle verification code",
     html: `
       <div style="font-family: Inter, system-ui, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #F8FAFC; border-radius: 12px;">
         <div style="text-align: center; margin-bottom: 24px;">

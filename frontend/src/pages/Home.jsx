@@ -11,7 +11,7 @@ export default function Home() {
             Vehicle Pooling, <span className="text-accent">Community by Community</span>
           </h1>
           <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            Velocity Pool connects people within your residency, tech park or company into independent, admin-managed pooling communities.
+            ShareYourVehicle connects people within your residency, tech park or company into independent, admin-managed pooling communities.
           </p>
           <div className="mt-8 flex items-center justify-center gap-3">
             {user ? (

@@ -13,7 +13,7 @@ function BrandPanel() {
     <div className="hidden sm:flex sm:w-2/5 bg-gradient-to-br from-primary to-primary-light text-white p-8 flex-col justify-between">
       <div className="flex items-center gap-2 font-bold text-lg">
         <span className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">V</span>
-        Velocity Pool
+        ShareYourVehicle
       </div>
       <div>
         <h2 className="text-2xl font-bold leading-snug mb-4">
@@ -35,7 +35,7 @@ function BrandPanel() {
         </ul>
       </div>
       <div className="text-white/40 text-xs">
-        © {new Date().getFullYear()} Velocity Pool
+        © {new Date().getFullYear()} ShareYourVehicle
       </div>
     </div>
   );
@@ -138,7 +138,7 @@ export default function Register() {
           {step === 1 ? (
             <>
               <h1 className="text-2xl font-bold mb-1 text-primary dark:text-sky-300">Create your account</h1>
-              <p className="text-slate-500 text-sm mb-6">Join Velocity Pool in seconds.</p>
+              <p className="text-slate-500 text-sm mb-6">Join ShareYourVehicle in seconds.</p>
 
               <form onSubmit={submitForm} className="space-y-4" noValidate>
                 {error && (

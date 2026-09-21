@@ -1,6 +1,6 @@
 {
-  "name": "Velocity Pool — Vehicle Pooling",
-  "short_name": "Velocity Pool",
+  "name": "ShareYourVehicle — Vehicle Pooling",
+  "short_name": "ShareYourVehicle",
   "description": "Community-based vehicle pooling platform",
   "start_url": "/",
   "display": "standalone",

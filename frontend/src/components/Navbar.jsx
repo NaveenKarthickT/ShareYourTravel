@@ -38,7 +38,7 @@ export default function Navbar() {
             <span className="w-8 h-8 rounded-lg bg-accent text-white flex items-center justify-center">
               <Globe className="w-4 h-4" />
             </span>
-            <span className="hidden sm:inline">Velocity Pool</span>
+            <span className="hidden sm:inline">ShareYourVehicle</span>
           </Link>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 text-sm">

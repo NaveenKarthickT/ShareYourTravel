@@ -1,550 +1,88 @@
 // ============================================================
-// Split-Screen Restore · Login + Register + OTP step
+// Rename Patch · Velocity Pool → Share Your Vehicle
 // Run from carpool-platform root
 // ============================================================
 
 const fs = require('fs');
 const path = require('path');
 
+const backendDir = path.resolve('backend');
 const frontendDir = path.resolve('frontend');
-if (!fs.existsSync(frontendDir)) {
-  console.error('❌ Run this from inside carpool-platform (must contain frontend/)');
+
+if (!fs.existsSync(backendDir) || !fs.existsSync(frontendDir)) {
+  console.error('❌ Run this from inside carpool-platform (must contain backend/ and frontend/)');
   process.exit(1);
 }
 
-const write = (p, content) => {
-  fs.mkdirSync(path.dirname(p), { recursive: true });
-  fs.writeFileSync(p, content.replace(/^\n/, ''), 'utf8');
-  console.log('  ✏️  Wrote: ' + path.relative(process.cwd(), p));
+// Recursively walk a directory and collect files matching extensions
+const walk = (dir, exts) => {
+  const out = [];
+  const recurse = (current) => {
+    const entries = fs.readdirSync(current, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
+      const full = path.join(current, entry.name);
+      if (entry.isDirectory()) recurse(full);
+      else if (exts.some((ext) => entry.name.endsWith(ext))) out.push(full);
+    }
+  };
+  recurse(dir);
+  return out;
 };
 
-console.log('\n🎨 Restoring split-screen design...\n');
+// Text replacements (order matters — longest first)
+const replacements = [
+  // "Velocity Pool" → "Share Your Vehicle"
+  [/Velocity Pool/g, 'ShareYourVehicle'],
+  // lowercase slug versions
+  [/velocity-pool/g, 'share-your-vehicle'],
+  [/velocitypool/g, 'shareyourvehicle'],
+  // "Velocity" alone (only where followed by capital letter of a word)
+  [/Velocity(?=[A-Z])/g, 'Share Your '],
+];
 
-// ============================================================
-// 1. Login.jsx — split screen, both steps
-// ============================================================
-write(path.join(frontendDir, 'src/pages/Login.jsx'), `
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, LogIn, ShieldCheck, RefreshCw, Car, Users2, MapPinned } from "lucide-react";
-import { useAuth } from "../context/AuthContext.jsx";
-import { useToast } from "../components/Toast.jsx";
+let touched = 0;
+let totalChanges = 0;
 
-const validateEmail = (v) => /^\\S+@\\S+\\.\\S+$/.test(v);
-const validatePassword = (v) => v.length >= 6;
+const applyToFile = (filePath) => {
+  let src = fs.readFileSync(filePath, 'utf8');
+  const original = src;
+  let changes = 0;
 
-// Shared left panel — brand + value props
-function BrandPanel() {
-  return (
-    <div className="hidden sm:flex sm:w-2/5 bg-gradient-to-br from-primary to-primary-light text-white p-8 flex-col justify-between">
-      <div className="flex items-center gap-2 font-bold text-lg">
-        <span className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">V</span>
-        Velocity Pool
-      </div>
-      <div>
-        <h2 className="text-2xl font-bold leading-snug mb-4">
-          Ride with people you actually know.
-        </h2>
-        <ul className="space-y-3 text-sm text-white/85">
-          <li className="flex items-start gap-2.5">
-            <Car className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>Every community runs its own pooling server</span>
-          </li>
-          <li className="flex items-start gap-2.5">
-            <Users2 className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>Admin-approved, private membership</span>
-          </li>
-          <li className="flex items-start gap-2.5">
-            <MapPinned className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>Route-based trip search &amp; requests</span>
-          </li>
-        </ul>
-      </div>
-      <div className="text-white/40 text-xs">
-        © {new Date().getFullYear()} Velocity Pool
-      </div>
-    </div>
-  );
-}
-
-export default function Login() {
-  const { login, verifyOtp, resendOtp } = useAuth();
-  const navigate = useNavigate();
-  const showToast = useToast();
-
-  const [step, setStep] = useState(1);
-  const [form, setForm] = useState({ email: "", password: "" });
-  const [otp, setOtp] = useState("");
-  const [emailForOtp, setEmailForOtp] = useState("");
-  const [devOtp, setDevOtp] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(0);
-
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const t = setInterval(() => setResendCooldown((s) => s - 1), 1000);
-    return () => clearInterval(t);
-  }, [resendCooldown]);
-
-  const canSubmitCreds = validateEmail(form.email) && validatePassword(form.password) && !loading;
-
-  const submitCredentials = async (e) => {
-    e.preventDefault();
-    setError("");
-    if (!canSubmitCreds) return;
-    try {
-      setLoading(true);
-      const result = await login(form.email, form.password);
-      setEmailForOtp(result.email);
-      if (result.devOtp) setDevOtp(result.devOtp);
-      setStep(2);
-      setResendCooldown(30);
-      showToast("Verification code sent");
-    } catch (err) {
-      setError(err.response?.data?.message || "Invalid email or password.");
-    } finally { setLoading(false); }
-  };
-
-  const submitOtp = async (e) => {
-    e.preventDefault();
-    setError("");
-    if (otp.length !== 6) { setError("Please enter the 6-digit code"); return; }
-    try {
-      setLoading(true);
-      await verifyOtp(emailForOtp, otp);
-      showToast("Verified — welcome back!");
-      navigate("/organizations");
-    } catch (err) {
-      setError(err.response?.data?.message || "Invalid or expired code.");
-    } finally { setLoading(false); }
-  };
-
-  const handleResend = async () => {
-    if (resendCooldown > 0) return;
-    try {
-      const result = await resendOtp(emailForOtp, "login");
-      if (result.devOtp) setDevOtp(result.devOtp);
-      setResendCooldown(30);
-      showToast("New code sent");
-    } catch (err) {
-      setError(err.response?.data?.message || "Could not resend code");
+  for (const [pattern, replacement] of replacements) {
+    const matches = src.match(pattern);
+    if (matches) {
+      changes += matches.length;
+      src = src.replace(pattern, replacement);
     }
-  };
+  }
 
-  return (
-    <div className="max-w-4xl mx-auto px-4 py-10 sm:py-16">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col sm:flex-row">
-        <BrandPanel />
+  if (src !== original) {
+    fs.writeFileSync(filePath, src, 'utf8');
+    touched++;
+    totalChanges += changes;
+    console.log(`  ✓ ${path.relative(process.cwd(), filePath)} (${changes} change${changes > 1 ? 's' : ''})`);
+  }
+};
 
-        {/* Right side — switches between credentials & OTP */}
-        <div className="flex-1 p-6 sm:p-8">
-          {step === 1 ? (
-            <>
-              <h1 className="text-2xl font-bold mb-1 text-primary dark:text-sky-300">Welcome back</h1>
-              <p className="text-slate-500 text-sm mb-6">Sign in to continue to your dashboard.</p>
+console.log('\n✏️  Renaming "Velocity Pool" → "Share Your Vehicle"...\n');
 
-              <form onSubmit={submitCredentials} className="space-y-4" noValidate>
-                {error && (
-                  <div className="bg-rose-50 text-rose-700 text-sm px-3 py-2 rounded-md flex items-center gap-2">
-                    <span>⚠</span> {error}
-                  </div>
-                )}
+// Frontend: .jsx, .js, .html, .json, .css
+const frontendFiles = walk(frontendDir, ['.jsx', '.js', '.html', '.json', '.css']);
+// Backend: .js (emails, comments)
+const backendFiles = walk(backendDir, ['.js']);
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input type="email" value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
-                      className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-900 rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
-                      placeholder="you@example.com" />
-                  </div>
-                </div>
+[...frontendFiles, ...backendFiles].forEach(applyToFile);
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input type="password" value={form.password}
-                      onChange={(e) => setForm({ ...form, password: e.target.value })}
-                      className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-900 rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
-                      placeholder="••••••••" />
-                  </div>
-                </div>
+console.log(`\n✅ Done — ${totalChanges} replacements across ${touched} files.\n`);
 
-                <button disabled={!canSubmitCreds}
-                  className="w-full flex items-center justify-center gap-2 bg-accent text-white rounded-md py-2.5 font-medium hover:bg-[#008fad] disabled:opacity-60 disabled:cursor-not-allowed transition">
-                  <LogIn className="w-4 h-4" />
-                  {loading ? "Verifying..." : "Continue"}
-                </button>
-
-                <p className="text-sm text-center text-slate-500">
-                  New here?{" "}
-                  <Link to="/register" className="text-accent font-medium hover:underline">
-                    Create an account
-                  </Link>
-                </p>
-
-                <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400">
-                  <p className="font-semibold text-slate-500 mb-2">Demo accounts:</p>
-                  <p><code>super@velocity.com</code> / <code>super123</code> — Super Admin</p>
-                  <p><code>admin@greenride.com</code> / <code>admin123</code> — Org Admin</p>
-                  <p><code>user@greenride.com</code> / <code>user123</code> — Regular User</p>
-                </div>
-              </form>
-            </>
-          ) : (
-            <>
-              <div className="flex items-center gap-3 mb-4">
-                <span className="w-10 h-10 rounded-lg bg-accent-soft dark:bg-slate-800 flex items-center justify-center">
-                  <ShieldCheck className="w-5 h-5 text-accent" />
-                </span>
-                <div>
-                  <h1 className="text-xl font-bold text-primary dark:text-sky-300">Verify your identity</h1>
-                  <p className="text-slate-500 text-xs">One more step to sign in</p>
-                </div>
-              </div>
-
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
-                We sent a 6-digit code to <strong className="text-slate-800 dark:text-slate-200">{emailForOtp}</strong>.
-                Enter it below to finish signing in.
-              </p>
-
-              <form onSubmit={submitOtp} className="space-y-4">
-                {error && (
-                  <div className="bg-rose-50 text-rose-700 text-sm px-3 py-2 rounded-md flex items-center gap-2">
-                    <span>⚠</span> {error}
-                  </div>
-                )}
-
-                {devOtp && (
-                  <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs px-3 py-2 rounded-md">
-                    🧪 <strong>Dev mode:</strong> your code is{" "}
-                    <code className="font-mono font-bold">{devOtp}</code>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Verification code
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\\D/g, ""))}
-                    className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-900 rounded-md px-3 py-3 text-center text-2xl font-mono tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-accent"
-                    placeholder="000000"
-                    autoFocus
-                  />
-                </div>
-
-                <button disabled={otp.length !== 6 || loading}
-                  className="w-full bg-accent text-white rounded-md py-2.5 font-medium hover:bg-[#008fad] disabled:opacity-60 disabled:cursor-not-allowed transition">
-                  {loading ? "Verifying..." : "Verify and sign in"}
-                </button>
-
-                <div className="flex items-center justify-between text-sm pt-2">
-                  <button type="button"
-                    onClick={() => { setStep(1); setOtp(""); setError(""); setDevOtp(""); }}
-                    className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
-                    ← Back
-                  </button>
-                  <button type="button" onClick={handleResend} disabled={resendCooldown > 0}
-                    className="text-accent font-medium hover:underline disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5">
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    {resendCooldown > 0 ? "Resend in " + resendCooldown + "s" : "Resend code"}
-                  </button>
-                </div>
-              </form>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-`);
-
-// ============================================================
-// 2. Register.jsx — split screen, both steps
-// ============================================================
-write(path.join(frontendDir, 'src/pages/Register.jsx'), `
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { User, Mail, Phone, Lock, UserPlus, ShieldCheck, RefreshCw, Car, Users2, MapPinned } from "lucide-react";
-import { useAuth } from "../context/AuthContext.jsx";
-import { useToast } from "../components/Toast.jsx";
-
-const validateEmail = (v) => /^\\S+@\\S+\\.\\S+$/.test(v);
-const validatePassword = (v) => v.length >= 6;
-const validateName = (v) => v.trim().length >= 2;
-
-function BrandPanel() {
-  return (
-    <div className="hidden sm:flex sm:w-2/5 bg-gradient-to-br from-primary to-primary-light text-white p-8 flex-col justify-between">
-      <div className="flex items-center gap-2 font-bold text-lg">
-        <span className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">V</span>
-        Velocity Pool
-      </div>
-      <div>
-        <h2 className="text-2xl font-bold leading-snug mb-4">
-          Join a private pooling community.
-        </h2>
-        <ul className="space-y-3 text-sm text-white/85">
-          <li className="flex items-start gap-2.5">
-            <Car className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>Verified members only</span>
-          </li>
-          <li className="flex items-start gap-2.5">
-            <Users2 className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>Admin-approved access</span>
-          </li>
-          <li className="flex items-start gap-2.5">
-            <MapPinned className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>Post &amp; find rides instantly</span>
-          </li>
-        </ul>
-      </div>
-      <div className="text-white/40 text-xs">
-        © {new Date().getFullYear()} Velocity Pool
-      </div>
-    </div>
-  );
-}
-
-export default function Register() {
-  const { register, verifySignup, resendOtp } = useAuth();
-  const navigate = useNavigate();
-  const showToast = useToast();
-
-  const [step, setStep] = useState(1);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
-  const [touched, setTouched] = useState({});
-  const [otp, setOtp] = useState("");
-  const [emailForOtp, setEmailForOtp] = useState("");
-  const [devOtp, setDevOtp] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(0);
-
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const t = setInterval(() => setResendCooldown((s) => s - 1), 1000);
-    return () => clearInterval(t);
-  }, [resendCooldown]);
-
-  const errors = {
-    name: touched.name && form.name && !validateName(form.name),
-    email: touched.email && form.email && !validateEmail(form.email),
-    password: touched.password && form.password && !validatePassword(form.password),
-  };
-
-  const canSubmit =
-    validateName(form.name) &&
-    validateEmail(form.email) &&
-    validatePassword(form.password) &&
-    !loading;
-
-  const field = (key) => ({
-    value: form[key],
-    onChange: (e) => setForm({ ...form, [key]: e.target.value }),
-    onBlur: () => setTouched((t) => ({ ...t, [key]: true })),
-    className:
-      "w-full border rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 transition " +
-      (errors[key]
-        ? "border-rose-400 focus:ring-rose-200"
-        : "border-slate-300 dark:border-slate-600 dark:bg-slate-900 focus:ring-accent"),
-  });
-
-  const submitForm = async (e) => {
-    e.preventDefault();
-    setTouched({ name: true, email: true, password: true });
-    setError("");
-    if (!canSubmit) return;
-    try {
-      setLoading(true);
-      const result = await register(form);
-      setEmailForOtp(result.email);
-      if (result.devOtp) setDevOtp(result.devOtp);
-      setStep(2);
-      setResendCooldown(30);
-      showToast("Verification code sent");
-    } catch (err) {
-      setError(err.response?.data?.message || "Could not create account.");
-    } finally { setLoading(false); }
-  };
-
-  const submitOtp = async (e) => {
-    e.preventDefault();
-    setError("");
-    if (otp.length !== 6) { setError("Please enter the 6-digit code"); return; }
-    try {
-      setLoading(true);
-      await verifySignup(emailForOtp, otp);
-      showToast("Account verified — welcome!");
-      navigate("/organizations");
-    } catch (err) {
-      setError(err.response?.data?.message || "Invalid or expired code.");
-    } finally { setLoading(false); }
-  };
-
-  const handleResend = async () => {
-    if (resendCooldown > 0) return;
-    try {
-      const result = await resendOtp(emailForOtp, "signup");
-      if (result.devOtp) setDevOtp(result.devOtp);
-      setResendCooldown(30);
-      showToast("New code sent");
-    } catch (err) {
-      setError(err.response?.data?.message || "Could not resend code");
-    }
-  };
-
-  return (
-    <div className="max-w-4xl mx-auto px-4 py-10 sm:py-16">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col sm:flex-row">
-        <BrandPanel />
-
-        <div className="flex-1 p-6 sm:p-8">
-          {step === 1 ? (
-            <>
-              <h1 className="text-2xl font-bold mb-1 text-primary dark:text-sky-300">Create your account</h1>
-              <p className="text-slate-500 text-sm mb-6">Join Velocity Pool in seconds.</p>
-
-              <form onSubmit={submitForm} className="space-y-4" noValidate>
-                {error && (
-                  <div className="bg-rose-50 text-rose-700 text-sm px-3 py-2 rounded-md flex items-center gap-2">
-                    <span>⚠</span> {error}
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Full name</label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input {...field("name")} placeholder="John Doe" />
-                  </div>
-                  {errors.name && <p className="text-xs text-rose-600 mt-1">Name must be at least 2 characters.</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input type="email" {...field("email")} placeholder="you@example.com" />
-                  </div>
-                  {errors.email && <p className="text-xs text-rose-600 mt-1">Please enter a valid email.</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone</label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input {...field("phone")} placeholder="+91 90000 00000" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input type="password" {...field("password")} placeholder="At least 6 characters" />
-                  </div>
-                  {errors.password && <p className="text-xs text-rose-600 mt-1">Password must be at least 6 characters.</p>}
-                </div>
-
-                <button disabled={!canSubmit}
-                  className="w-full flex items-center justify-center gap-2 bg-accent text-white rounded-md py-2.5 font-medium hover:bg-[#008fad] disabled:opacity-60 disabled:cursor-not-allowed transition">
-                  <UserPlus className="w-4 h-4" />
-                  {loading ? "Creating account..." : "Continue"}
-                </button>
-
-                <p className="text-sm text-center text-slate-500">
-                  Already have an account?{" "}
-                  <Link to="/login" className="text-accent font-medium hover:underline">Login</Link>
-                </p>
-              </form>
-            </>
-          ) : (
-            <>
-              <div className="flex items-center gap-3 mb-4">
-                <span className="w-10 h-10 rounded-lg bg-accent-soft dark:bg-slate-800 flex items-center justify-center">
-                  <ShieldCheck className="w-5 h-5 text-accent" />
-                </span>
-                <div>
-                  <h1 className="text-xl font-bold text-primary dark:text-sky-300">Verify your email</h1>
-                  <p className="text-slate-500 text-xs">One more step to finish</p>
-                </div>
-              </div>
-
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
-                We sent a 6-digit code to <strong className="text-slate-800 dark:text-slate-200">{emailForOtp}</strong>.
-                Enter it below to activate your account.
-              </p>
-
-              <form onSubmit={submitOtp} className="space-y-4">
-                {error && (
-                  <div className="bg-rose-50 text-rose-700 text-sm px-3 py-2 rounded-md flex items-center gap-2">
-                    <span>⚠</span> {error}
-                  </div>
-                )}
-
-                {devOtp && (
-                  <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs px-3 py-2 rounded-md">
-                    🧪 <strong>Dev mode:</strong> your code is{" "}
-                    <code className="font-mono font-bold">{devOtp}</code>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Verification code
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\\D/g, ""))}
-                    className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-900 rounded-md px-3 py-3 text-center text-2xl font-mono tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-accent"
-                    placeholder="000000"
-                    autoFocus
-                  />
-                </div>
-
-                <button disabled={otp.length !== 6 || loading}
-                  className="w-full bg-accent text-white rounded-md py-2.5 font-medium hover:bg-[#008fad] disabled:opacity-60 disabled:cursor-not-allowed transition">
-                  {loading ? "Verifying..." : "Verify and create account"}
-                </button>
-
-                <div className="flex items-center justify-between text-sm pt-2">
-                  <button type="button"
-                    onClick={() => { setStep(1); setOtp(""); setError(""); setDevOtp(""); }}
-                    className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
-                    ← Back
-                  </button>
-                  <button type="button" onClick={handleResend} disabled={resendCooldown > 0}
-                    className="text-accent font-medium hover:underline disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5">
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    {resendCooldown > 0 ? "Resend in " + resendCooldown + "s" : "Resend code"}
-                  </button>
-                </div>
-              </form>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-`);
-
-console.log('\n✅ Split-screen restored for both Login and Register (including OTP steps).\n');
 console.log('Next steps:');
 console.log('  git add .');
-console.log('  git commit -m "Restore split-screen design for login/register + OTP"');
+console.log('  git commit -m "Rename: Velocity Pool → ShareYour Vehicle"');
 console.log('  git push\n');
-console.log('  Vercel auto-deploys the frontend in ~30s.\n');
+console.log('  Vercel auto-deploys both projects in ~30s.\n');
+console.log('  ⚠️  Optional: also update these manually for a complete rename:');
+console.log('       • Vercel project names (dashboard → project → Settings → Name)');
+console.log('       • MongoDB database name if you want consistency');
+console.log('       • SMTP "from" name in backend/.env');
+console.log('       • GitHub repo name (Settings → Rename)\n');

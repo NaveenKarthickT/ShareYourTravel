@@ -1,4 +1,4 @@
-const CACHE_NAME = "velocity-pool-v1";
+const CACHE_NAME = "share-your-vehicle-v1";
 const SHELL = ["/", "/index.html", "/manifest.json"];
 
 self.addEventListener("install", (event) => {
