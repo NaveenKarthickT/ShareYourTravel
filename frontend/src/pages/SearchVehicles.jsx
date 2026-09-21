@@ -8,6 +8,7 @@ import VehicleCard from "../components/VehicleCard.jsx";
 import { SkeletonGrid } from "../components/Skeleton.jsx";
 import FilterChips from "../components/FilterChips.jsx";
 import CityInput from "../components/CityInput.jsx";
+import CarLoader from "../components/CarLoader.jsx";
 
 const links = [
   { to: "/dashboard", label: "Overview" },

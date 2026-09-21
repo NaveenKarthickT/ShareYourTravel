@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import Sidebar from "../components/Sidebar.jsx";
 import VehicleCard from "../components/VehicleCard.jsx";
 import { SkeletonGrid, SkeletonStatRow } from "../components/Skeleton.jsx";
+import CarLoader from "../components/CarLoader.jsx";
 
 const links = [
   { to: "/dashboard", label: "Overview", end: true },

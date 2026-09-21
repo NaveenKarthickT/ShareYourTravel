@@ -1,56 +1,3 @@
-// ============================================================
-// Car Loader Patch
-// 1. Creates frontend/src/components/CarLoader.jsx
-// 2. Uses it in SearchVehicles.jsx while loading
-// 3. Uses it in UserDashboard.jsx while loading
-// Run from carpool-platform root:
-//   node car-loader-patch.js
-// ============================================================
-
-const fs = require("fs");
-const path = require("path");
-
-const ROOT = path.resolve("frontend");
-if (!fs.existsSync(ROOT)) {
-  console.error("❌ Run this from the carpool-platform root (must contain frontend/).");
-  process.exit(1);
-}
-
-const write = (relPath, content) => {
-  const full = path.join(ROOT, relPath);
-  fs.mkdirSync(path.dirname(full), { recursive: true });
-  fs.writeFileSync(full, content.replace(/^\n/, ""), "utf8");
-  console.log("  ✏️  Wrote: " + path.relative(process.cwd(), full));
-};
-
-const patch = (relPath, edits) => {
-  const full = path.join(ROOT, relPath);
-  if (!fs.existsSync(full)) {
-    console.log("  ⚠️  Missing: " + path.relative(process.cwd(), full));
-    return;
-  }
-  let src = fs.readFileSync(full, "utf8");
-  let changed = 0;
-  for (const [find, replace] of edits) {
-    if (!src.includes(find)) {
-      console.log("  ⚠️  Pattern not found in " + path.basename(relPath));
-      continue;
-    }
-    src = src.replace(find, replace);
-    changed++;
-  }
-  if (changed) {
-    fs.writeFileSync(full, src, "utf8");
-    console.log("  🔧 Patched: " + path.relative(process.cwd(), full) + ` (${changed})`);
-  }
-};
-
-console.log("\n🚗 Adding animated car loader...\n");
-
-// ============================================================
-// 1. CREATE: frontend/src/components/CarLoader.jsx
-// ============================================================
-write("src/components/CarLoader.jsx", `
 // Animated car loading screen — car drives in, door opens,
 // passenger hops in, door closes, car drives off. Loops.
 
@@ -104,7 +51,7 @@ export default function CarLoader({ message = "Starting your ride" }) {
         </div>
       </div>
 
-      <style>{ \`
+      <style>{ `
         @keyframes car-drive-in {
           0%   { transform: translateX(-260px); }
           15%  { transform: translateX(0); }
@@ -142,43 +89,7 @@ export default function CarLoader({ message = "Starting your ride" }) {
           .car, .door, .passenger, .wheel-front, .wheel-back, .dots span { animation: none; }
           .passenger { opacity: 1; }
         }
-      \` }</style>
+      ` }</style>
     </div>
   );
 }
-`);
-
-// ============================================================
-// 2. PATCH: SearchVehicles.jsx — import CarLoader + use it
-// ============================================================
-patch("src/pages/SearchVehicles.jsx", [
-  [
-    'import CityInput from "../components/CityInput.jsx";',
-    'import CityInput from "../components/CityInput.jsx";\nimport CarLoader from "../components/CarLoader.jsx";',
-  ],
-  [
-    "{loading ? (\n          <SkeletonGrid count={6} />\n        ) : results.length === 0 ? (",
-    '{loading ? (\n          <CarLoader message="Finding rides" />\n        ) : results.length === 0 ? (',
-  ],
-]);
-
-// ============================================================
-// 3. PATCH: UserDashboard.jsx — import CarLoader + use it
-// ============================================================
-patch("src/pages/UserDashboard.jsx", [
-  [
-    'import { SkeletonGrid, SkeletonStatRow } from "../components/Skeleton.jsx";',
-    'import { SkeletonGrid, SkeletonStatRow } from "../components/Skeleton.jsx";\nimport CarLoader from "../components/CarLoader.jsx";',
-  ],
-  [
-    "{loading ? (\n          <SkeletonGrid count={3} />\n        ) : latest.length === 0 ? (",
-    '{loading ? (\n          <CarLoader message="Loading your dashboard" />\n        ) : latest.length === 0 ? (',
-  ],
-]);
-
-console.log("\n✅ Car loader patch applied!\n");
-console.log("Next steps:");
-console.log("  git add .");
-console.log('  git commit -m "Add animated car loading screen"');
-console.log("  git push\n");
-console.log("  Then hard refresh (Ctrl + Shift + R) in the browser.\n");
