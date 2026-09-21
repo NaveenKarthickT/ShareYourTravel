@@ -130,16 +130,14 @@ export default function HeroCar() {
 
         /* Passenger: hops in, disappears, appears again next loop. */
         @keyframes hero-passenger-hop {
-          0%, 15%   { transform: translate(0, 0); opacity: 1; }
-          25%       { transform: translate(60px, -15px); opacity: 1; }
+          0%, 25%   { transform: translate(0, 0); opacity: 0; }
+          28%       { transform: translate(60px, -15px); opacity: 1; }
           45%       { transform: translate(155px, -12px); opacity: 1; }
-          55%       { transform: translate(170px, -10px) scale(0.88); opacity: 1; }
-          60%, 95%  { transform: translate(170px, -8px) scale(0.9); opacity: 1; }
-          100%      { transform: translate(170px, -8px) scale(0.9); opacity: 1; }
+          52%       { transform: translate(175px, -15px) scale(0.7); opacity: 0; }
+          100%      { transform: translate(175px, -15px) scale(0.7); opacity: 0; }
         }
         .hero-passenger {
           animation: hero-passenger-hop 6s ease-in-out infinite;
-          opacity: 1;
         }
 
         /* Wheels spin while the car is moving. */
