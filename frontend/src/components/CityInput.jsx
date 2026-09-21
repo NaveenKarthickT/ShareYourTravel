@@ -22,6 +22,12 @@ const pushRecent = (city) => {
   } catch {}
 };
 
+const clearRecent = () => {
+  try {
+    localStorage.removeItem(RECENT_KEY);
+  } catch {}
+};
+
 export default function CityInput({
   value,
   onChange,
@@ -60,6 +66,14 @@ export default function CityInput({
     setOpen(false);
     setHighlighted(-1);
     inputRef.current?.blur();
+  };
+
+  const handleClearRecent = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    clearRecent();
+    setRecent([]);
+    inputRef.current?.focus();
   };
 
   const onKeyDown = (e) => {
@@ -127,8 +141,17 @@ export default function CityInput({
       {open && (items.length > 0 || showRecent) && (
         <div className="absolute z-50 mt-1 left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg max-h-64 overflow-y-auto py-1">
           {showRecent && (
-            <div className="px-3 pt-2 pb-1 text-[0.65rem] font-bold uppercase tracking-wide text-slate-400 flex items-center gap-1.5">
-              <Clock className="w-3 h-3" /> Recent
+            <div className="px-3 pt-2 pb-1 flex items-center justify-between">
+              <div className="text-[0.65rem] font-bold uppercase tracking-wide text-slate-400 flex items-center gap-1.5">
+                <Clock className="w-3 h-3" /> Recent
+              </div>
+              <button
+                type="button"
+                onMouseDown={handleClearRecent}
+                className="text-[0.65rem] font-semibold text-slate-400 hover:text-rose-600 uppercase tracking-wide flex items-center gap-1"
+              >
+                <X className="w-3 h-3" /> Clear
+              </button>
             </div>
           )}
           {!showRecent && suggestions.length > 0 && (
