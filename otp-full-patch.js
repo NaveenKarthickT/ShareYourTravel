@@ -1,35 +1,35 @@
 // ============================================================
-// City Search Patch · Autocomplete suggestions on route inputs
-// Run: node city-search-patch.js   (from carpool-platform root)
+// Creates the two files needed for city autocomplete:
+//   - frontend/src/data/cities.js
+//   - frontend/src/components/CityInput.jsx
+// Run from carpool-platform root:
+//   node make-city-files.js
 // ============================================================
 
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
-const frontendDir = path.resolve('frontend');
-if (!fs.existsSync(frontendDir)) {
-  console.error('❌ Run this from inside carpool-platform (must contain frontend/)');
+const ROOT = path.resolve("frontend");
+if (!fs.existsSync(ROOT)) {
+  console.error("❌ Run this from the carpool-platform root (must contain frontend/).");
   process.exit(1);
 }
 
-const write = (p, content) => {
-  fs.mkdirSync(path.dirname(p), { recursive: true });
-  fs.writeFileSync(p, content.replace(/^\n/, ''), 'utf8');
-  console.log('  ✏️  Wrote: ' + path.relative(process.cwd(), p));
+const write = (relPath, content) => {
+  const full = path.join(ROOT, relPath);
+  fs.mkdirSync(path.dirname(full), { recursive: true });
+  fs.writeFileSync(full, content.replace(/^\n/, ""), "utf8");
+  console.log("  ✏️  Wrote: " + path.relative(process.cwd(), full));
 };
 
-console.log('\n🔍 Adding city autocomplete search...\n');
+console.log("\n📦 Creating city autocomplete files...\n");
 
 // ============================================================
-// 1. NEW: frontend/src/data/cities.js
+// 1. frontend/src/data/cities.js
 // ============================================================
-write(path.join(frontendDir, 'src/data/cities.js'), `
-// Curated list of cities, towns and popular areas — used for
-// autocomplete suggestions in From/To search inputs.
-// Focused on India + a few global hubs.
-
+write("src/data/cities.js", `
+// Curated list of cities, towns and popular areas.
 export const CITIES = [
-  // --- Major Indian metros ---
   "Bangalore", "Bengaluru", "Mumbai", "Delhi", "New Delhi", "Chennai",
   "Kolkata", "Hyderabad", "Pune", "Ahmedabad", "Surat", "Jaipur",
   "Lucknow", "Kanpur", "Nagpur", "Indore", "Thane", "Bhopal",
@@ -62,28 +62,31 @@ export const CITIES = [
   "Kohima", "Itanagar", "Gangtok", "Panaji", "Pondicherry",
   "Port Blair", "Kavaratti",
 
-  // --- Popular neighbourhoods / tech hubs / IT parks ---
   "Whitefield", "Electronic City", "Koramangala", "Indiranagar",
   "Jayanagar", "HSR Layout", "Marathahalli", "Yelahanka",
   "Hebbal", "Banashankari", "Rajajinagar", "BTM Layout",
   "Sarjapur Road", "Bellandur", "Kadugodi", "Devanahalli",
   "Bommanahalli", "Peenya", "Yeshwanthpur",
+  "Tambaram", "OMR", "Guindy", "Velachery", "Adyar", "T Nagar",
+  "Anna Nagar", "Porur", "Perungudi", "Ambattur",
+  "Chromepet", "Pallavaram", "Thiruvanmiyur", "Besant Nagar",
+  "Egmore", "Nungambakkam", "Mylapore", "Triplicane",
+  "Madhavaram", "Poonamallee", "Pallikaranai", "Sholinganallur",
+  "Siruseri", "Kelambakkam", "Mahindra World City",
+
   "Andheri", "Bandra", "Powai", "Navi Mumbai", "Thane West",
   "Borivali", "Kandivali", "Malad", "Goregaon", "Chembur",
   "Lower Parel", "Worli", "Colaba", "Dadar",
-  "Gurgaon", "Gurugram", "Faridabad", "Noida", "Greater Noida",
+  "Gurgaon", "Gurugram", "Greater Noida",
   "Saket", "Dwarka", "Rohini", "Karol Bagh", "Connaught Place",
   "Nehru Place", "Hauz Khas", "Vasant Kunj",
   "Hinjewadi", "Kharadi", "Baner", "Aundh", "Wakad",
   "Magarpatta", "Hadapsar", "Viman Nagar", "Pimpri", "Chinchwad",
   "Hitec City", "Gachibowli", "Madhapur", "Kondapur",
   "Banjara Hills", "Jubilee Hills", "Secunderabad",
-  "OMR", "Guindy", "Velachery", "Adyar", "T Nagar",
-  "Anna Nagar", "Tambaram", "Porur", "Perungudi",
   "Salt Lake", "New Town", "Rajarhat", "Park Street",
   "Sector V", "Bidhannagar", "Behala", "Garia",
 
-  // --- International hubs (for global pooling) ---
   "San Francisco", "New York", "Los Angeles", "Seattle",
   "Austin", "Boston", "Chicago", "Denver", "Miami",
   "London", "Manchester", "Birmingham", "Edinburgh",
@@ -91,46 +94,32 @@ export const CITIES = [
   "Barcelona", "Madrid", "Rome", "Milan",
   "Dubai", "Abu Dhabi", "Singapore", "Hong Kong",
   "Tokyo", "Osaka", "Seoul", "Sydney", "Melbourne",
-  "Toronto", "Vancouver", "Mexico City", "São Paulo",
+  "Toronto", "Vancouver", "Mexico City",
 ];
 
-// Normalize a string for fuzzy match (removes case, extra spaces)
 const normalize = (s) => (s || "").toLowerCase().trim();
 
-// Returns matching cities, sorted by relevance:
-//   1. Prefix match first ("bang" → "Bangalore" before "Bangkok")
-//   2. Then substring match
-//   3. Then fuzzy match on missing letters
 export const searchCities = (query, limit = 8) => {
   const q = normalize(query);
   if (!q || q.length < 2) return [];
-
   const prefixMatches = [];
   const substringMatches = [];
-
   for (const city of CITIES) {
     const c = normalize(city);
     if (c.startsWith(q)) prefixMatches.push(city);
     else if (c.includes(q)) substringMatches.push(city);
   }
-
   return [...prefixMatches, ...substringMatches].slice(0, limit);
 };
 `);
 
 // ============================================================
-// 2. NEW: frontend/src/components/CityInput.jsx
+// 2. frontend/src/components/CityInput.jsx
 // ============================================================
-write(path.join(frontendDir, 'src/components/CityInput.jsx'), `
+write("src/components/CityInput.jsx", `
 import { useEffect, useRef, useState } from "react";
 import { MapPin, MapPinned, Clock, X } from "lucide-react";
 import { searchCities } from "../data/cities.js";
-
-// Autocomplete input for city / area names.
-// - Suggests from a curated list while typing
-// - Click a suggestion to select it
-// - Shows recent picks for the same field type
-// - Keyboard navigation (↑ ↓ Enter Esc)
 
 const RECENT_KEY = "cp_recent_cities";
 
@@ -138,7 +127,9 @@ const readRecent = () => {
   try {
     const raw = localStorage.getItem(RECENT_KEY);
     return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 };
 
 const pushRecent = (city) => {
@@ -169,7 +160,6 @@ export default function CityInput({
     setRecent(readRecent());
   }, [open]);
 
-  // Close on outside click
   useEffect(() => {
     const onClick = (e) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
@@ -217,14 +207,20 @@ export default function CityInput({
   return (
     <div ref={wrapRef} className={"relative " + className}>
       <div className="relative">
-        {Icon && <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />}
+        {Icon && (
+          <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+        )}
         <input
           ref={inputRef}
           id={id}
           type="text"
           autoComplete="off"
           value={value}
-          onChange={(e) => { onChange?.(e.target.value); setOpen(true); setHighlighted(-1); }}
+          onChange={(e) => {
+            onChange?.(e.target.value);
+            setOpen(true);
+            setHighlighted(-1);
+          }}
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
           placeholder={placeholder}
@@ -234,7 +230,11 @@ export default function CityInput({
           <button
             type="button"
             tabIndex={-1}
-            onClick={() => { onChange?.(""); inputRef.current?.focus(); setOpen(true); }}
+            onClick={() => {
+              onChange?.("");
+              inputRef.current?.focus();
+              setOpen(true);
+            }}
             className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400"
             aria-label="Clear"
           >
@@ -268,7 +268,11 @@ export default function CityInput({
                   : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")
               }
             >
-              <MapPin className={"w-3.5 h-3.5 " + (i === highlighted ? "text-accent" : "text-slate-400")} />
+              <MapPin
+                className={
+                  "w-3.5 h-3.5 " + (i === highlighted ? "text-accent" : "text-slate-400")
+                }
+              />
               <span className="truncate">{city}</span>
             </button>
           ))}
@@ -279,98 +283,10 @@ export default function CityInput({
 }
 `);
 
-// ============================================================
-// 3. PATCH: frontend/src/pages/SearchVehicles.jsx
-//    Replace From/To inputs with CityInput
-// ============================================================
-const searchPath = path.join(frontendDir, 'src/pages/SearchVehicles.jsx');
-let searchSrc = fs.readFileSync(searchPath, 'utf8');
-
-// Add import
-if (!searchSrc.includes('CityInput')) {
-  searchSrc = searchSrc.replace(
-    `import FilterChips from "../components/FilterChips.jsx";`,
-    `import FilterChips from "../components/FilterChips.jsx";\nimport CityInput from "../components/CityInput.jsx";`
-  );
-
-  // Replace From input block
-  searchSrc = searchSrc.replace(
-    /<div className="relative">\s*<MapPin className="absolute left-3 top-1\/2 -translate-y-1\/2 w-3\.5 h-3\.5 text-slate-400" \/>\s*<input value=\{filters\.startLocation\}[\s\S]*?\/>\s*<\/div>/,
-    `<CityInput
-                value={filters.startLocation}
-                onChange={(v) => setFilters({ ...filters, startLocation: v })}
-                onSelect={() => canApply && search()}
-                placeholder="Search city or area"
-                icon={MapPin}
-              />`
-  );
-
-  // Replace To input block
-  searchSrc = searchSrc.replace(
-    /<div className="relative">\s*<Flag className="absolute left-3 top-1\/2 -translate-y-1\/2 w-3\.5 h-3\.5 text-slate-400" \/>\s*<input value=\{filters\.destination\}[\s\S]*?\/>\s*<\/div>/,
-    `<CityInput
-                value={filters.destination}
-                onChange={(v) => setFilters({ ...filters, destination: v })}
-                onSelect={() => canApply && search()}
-                placeholder="Search city or area"
-                icon={Flag}
-              />`
-  );
-
-  fs.writeFileSync(searchPath, searchSrc, 'utf8');
-  console.log('  🔧 Patched: frontend/src/pages/SearchVehicles.jsx');
-} else {
-  console.log('  ✓ SearchVehicles.jsx already uses CityInput');
-}
-
-// ============================================================
-// 4. PATCH: frontend/src/pages/PostVehicle.jsx
-//    Replace From/To inputs with CityInput
-// ============================================================
-const postPath = path.join(frontendDir, 'src/pages/PostVehicle.jsx');
-let postSrc = fs.readFileSync(postPath, 'utf8');
-
-if (!postSrc.includes('CityInput')) {
-  postSrc = postSrc.replace(
-    `import Sidebar from "../components/Sidebar.jsx";`,
-    `import Sidebar from "../components/Sidebar.jsx";\nimport CityInput from "../components/CityInput.jsx";`
-  );
-
-  // Replace From block
-  postSrc = postSrc.replace(
-    /<div className="relative">\s*<MapPin className="absolute left-3 top-1\/2 -translate-y-1\/2 w-4 h-4 text-slate-400" \/>\s*<input \{\.\.\.field\("startLocation"\)\} className=\{inputClass\("startLocation"\)\} \/>\s*<\/div>/,
-    `<CityInput
-                  value={form.startLocation}
-                  onChange={(v) => setForm({ ...form, startLocation: v })}
-                  onSelect={() => setTouched((t) => ({ ...t, startLocation: true }))}
-                  placeholder="Search city or area"
-                  icon={MapPin}
-                  className="w-full"
-                />`
-  );
-
-  // Replace To block
-  postSrc = postSrc.replace(
-    /<div className="relative">\s*<Flag className="absolute left-3 top-1\/2 -translate-y-1\/2 w-4 h-4 text-slate-400" \/>\s*<input \{\.\.\.field\("destination"\)\} className=\{inputClass\("destination"\)\} \/>\s*<\/div>/,
-    `<CityInput
-                  value={form.destination}
-                  onChange={(v) => setForm({ ...form, destination: v })}
-                  onSelect={() => setTouched((t) => ({ ...t, destination: true }))}
-                  placeholder="Search city or area"
-                  icon={Flag}
-                  className="w-full"
-                />`
-  );
-
-  fs.writeFileSync(postPath, postSrc, 'utf8');
-  console.log('  🔧 Patched: frontend/src/pages/PostVehicle.jsx');
-} else {
-  console.log('  ✓ PostVehicle.jsx already uses CityInput');
-}
-
-console.log('\n✅ City search patch applied!\n');
-console.log('Next steps:');
-console.log('  git add .');
-console.log('  git commit -m "Add city autocomplete to search & post"');
-console.log('  git push\n');
-console.log('  Vercel auto-deploys the frontend in ~30s.\n');
+console.log("\n✅ Both files created.\n");
+console.log("Next steps:");
+console.log("  1. Verify in VS Code Explorer that these now exist:");
+console.log("       frontend/src/data/cities.js");
+console.log("       frontend/src/components/CityInput.jsx");
+console.log("  2. Update SearchVehicles.jsx to import & use CityInput (see previous message)");
+console.log("  3. git add . && git commit -m \"Add city autocomplete\" && git push\n");
