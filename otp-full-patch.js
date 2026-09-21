@@ -1,8 +1,7 @@
 // ============================================================
-// Restore Hero Car
-// Adds HeroCar animation back into the creative homepage
+// Rewrite PostVehicle.jsx — clean, working version
 // Run from carpool-platform root:
-//   node restore-hero-car.js
+//   node rewrite-postvehicle.js
 // ============================================================
 
 const fs = require("fs");
@@ -14,227 +13,337 @@ if (!fs.existsSync(ROOT)) {
   process.exit(1);
 }
 
-const homePath = path.join(ROOT, "src/pages/Home.jsx");
-const heroCarPath = path.join(ROOT, "src/components/HeroCar.jsx");
+const write = (relPath, content) => {
+  const full = path.join(ROOT, relPath);
+  fs.mkdirSync(path.dirname(full), { recursive: true });
+  fs.writeFileSync(full, content.replace(/^\n/, ""), "utf8");
+  console.log("  ✏️  " + path.relative(process.cwd(), full));
+};
 
-// ============================================================
-// 1. Make sure HeroCar.jsx exists
-// ============================================================
-if (!fs.existsSync(heroCarPath)) {
-  console.log("  ⚠️  HeroCar.jsx not found — recreating it");
-  fs.mkdirSync(path.dirname(heroCarPath), { recursive: true });
-  fs.writeFileSync(heroCarPath, `// Always-looping animated car with passenger pickup.
-// Sized for the homepage hero.
+console.log("\n🔧 Rewriting PostVehicle.jsx...\n");
 
-export default function HeroCar() {
+write("src/pages/PostVehicle.jsx", `
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Car, Hash, MapPin, Flag, Calendar, Clock, Users,
+  IndianRupee, FileText, Send,
+} from "lucide-react";
+import api from "../api/axios.js";
+import { useAuth } from "../context/AuthContext.jsx";
+import { useToast } from "../components/Toast.jsx";
+import Sidebar from "../components/Sidebar.jsx";
+import CityInput from "../components/CityInput.jsx";
+import PageHeader from "../components/PageHeader.jsx";
+
+const links = [
+  { to: "/dashboard", label: "Overview" },
+  { to: "/vehicles/search", label: "Search Vehicles" },
+  { to: "/vehicles/post", label: "Post a Vehicle", end: true },
+  { to: "/trips/confirmed", label: "Confirmed Trips" },
+  { to: "/trips/ongoing", label: "Ongoing Trip" },
+  { to: "/trips/requests", label: "My Requests" },
+  { to: "/trips/completed", label: "Completed Trips" },
+];
+
+export default function PostVehicle() {
+  const { activeOrg } = useAuth();
+  const navigate = useNavigate();
+  const showToast = useToast();
+
+  const [form, setForm] = useState({
+    vehicleType: "car",
+    vehicleModel: "",
+    vehicleNumber: "",
+    startLocation: "",
+    destination: "",
+    travelDate: "",
+    travelTime: "",
+    totalSeats: 3,
+    farePerSeat: 0,
+    notes: "",
+  });
+  const [touched, setTouched] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  const errors = {
+    startLocation: touched.startLocation && !form.startLocation.trim(),
+    destination: touched.destination && !form.destination.trim(),
+    travelDate: touched.travelDate && !form.travelDate,
+    travelTime: touched.travelTime && !form.travelTime,
+    totalSeats: touched.totalSeats && (!form.totalSeats || form.totalSeats < 1),
+  };
+
+  const canSubmit =
+    form.startLocation.trim() &&
+    form.destination.trim() &&
+    form.travelDate &&
+    form.travelTime &&
+    form.totalSeats >= 1 &&
+    !loading;
+
+  const field = (key) => ({
+    value: form[key],
+    onChange: (e) => setForm({ ...form, [key]: e.target.value }),
+    onBlur: () => setTouched((t) => ({ ...t, [key]: true })),
+  });
+
+  const inputClass = (key) =>
+    "w-full border rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 transition " +
+    (errors[key]
+      ? "border-rose-400 focus:ring-rose-200"
+      : "border-slate-300 dark:border-slate-600 dark:bg-slate-900 focus:ring-accent");
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setTouched({
+      startLocation: true,
+      destination: true,
+      travelDate: true,
+      travelTime: true,
+      totalSeats: true,
+    });
+
+    if (!activeOrg?.org?._id) {
+      showToast("Please pick a community first", "error");
+      return;
+    }
+    if (!canSubmit) {
+      showToast("Please fill in all required fields", "error");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await api.post("/vehicles", { ...form, organization: activeOrg.org._id });
+      showToast("Trip posted successfully");
+      navigate("/vehicles/search");
+    } catch (err) {
+      showToast(err.response?.data?.message || "Could not post trip", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="relative w-full max-w-2xl mx-auto aspect-[3/1] select-none">
-      <svg viewBox="0 0 600 200" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#E0F2FE" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="#E0F2FE" stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id="carBody" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#00C6E6" />
-            <stop offset="100%" stopColor="#00A3C4" />
-          </linearGradient>
-          <radialGradient id="sun" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#FEF3C7" />
-            <stop offset="100%" stopColor="#FEF3C7" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-
-        <rect width="600" height="200" fill="url(#sky)" />
-        <circle cx="500" cy="60" r="80" fill="url(#sun)" opacity="0.6" />
-
-        <g opacity="0.15" fill="#0B2B4F">
-          <rect x="30" y="120" width="20" height="40" />
-          <rect x="60" y="100" width="25" height="60" />
-          <rect x="95" y="130" width="18" height="30" />
-          <rect x="470" y="110" width="22" height="50" />
-          <rect x="500" y="95" width="28" height="65" />
-          <rect x="540" y="120" width="20" height="40" />
-        </g>
-
-        <rect x="0" y="160" width="600" height="8" rx="4" fill="#cbd5e1" />
-        <rect x="0" y="162" width="600" height="4" rx="2" fill="#94a3b8" opacity="0.7" />
-
-        <g className="road-dashes">
-          {[20, 100, 180, 260, 340, 420, 500].map((x) => (
-            <rect key={x} x={x} y="163" width="40" height="2" rx="1" fill="#fff" opacity="0.9" />
-          ))}
-        </g>
-
-        <g className="hero-passenger">
-          <circle cx="130" cy="105" r="9" fill="#0B2B4F" />
-          <rect x="122" y="116" width="16" height="24" rx="4" fill="#00A3C4" />
-          <rect x="124" y="140" width="5" height="16" rx="2" fill="#0B2B4F" />
-          <rect x="131" y="140" width="5" height="16" rx="2" fill="#0B2B4F" />
-        </g>
-
-        <g className="hero-car">
-          <ellipse cx="320" cy="172" rx="120" ry="6" fill="#0B2B4F" opacity="0.12" />
-
-          <path d="M180,155 L190,105 Q200,85 235,85 L410,85 Q445,85 455,105 L465,155 Z" fill="url(#carBody)" />
-          <path d="M215,105 Q225,65 265,65 L375,65 Q415,65 425,105 Z" fill="#0B2B4F" />
-          <path d="M228,102 Q235,75 262,75 L305,75 L305,102 Z" fill="#bae6fd" opacity="0.9" />
-          <path d="M312,75 L355,75 Q385,75 392,102 L312,102 Z" fill="#bae6fd" opacity="0.9" />
-
-          <g className="hero-door" style={{ transformOrigin: "310px 120px" }}>
-            <rect x="305" y="102" width="6" height="45" rx="2" fill="#0B2B4F" opacity="0.8" />
-            <circle cx="307" cy="125" r="2" fill="#00A3C4" />
-          </g>
-
-          <rect x="456" y="132" width="10" height="10" rx="3" fill="#fde68a" />
-          <path className="beam" d="M466,137 L520,120 L520,155 Z" fill="#fde68a" opacity="0.35" />
-
-          <rect x="178" y="132" width="6" height="10" rx="2" fill="#f43f5e" opacity="0.8" />
-
-          <circle cx="235" cy="160" r="16" fill="#0F172A" />
-          <circle cx="235" cy="160" r="6" fill="#cbd5e1" className="hero-wheel-front" />
-          <circle cx="410" cy="160" r="16" fill="#0F172A" />
-          <circle cx="410" cy="160" r="6" fill="#cbd5e1" className="hero-wheel-back" />
-        </g>
-
-        <g className="motion-lines" opacity="0">
-          <rect x="140" y="110" width="30" height="3" rx="1.5" fill="#00A3C4" />
-          <rect x="120" y="130" width="40" height="3" rx="1.5" fill="#00A3C4" opacity="0.6" />
-          <rect x="150" y="145" width="25" height="3" rx="1.5" fill="#00A3C4" opacity="0.4" />
-        </g>
-      </svg>
-
-      <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white dark:from-slate-950 to-transparent pointer-events-none" />
-
-      <style>{\`
-        @keyframes hero-car-drive {
-          0%    { transform: translateX(-400px); }
-          18%   { transform: translateX(0); }
-          60%   { transform: translateX(0); }
-          100%  { transform: translateX(500px); }
-        }
-        .hero-car {
-          animation: hero-car-drive 6s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-          transform-origin: center;
-        }
-
-        @keyframes hero-door-open {
-          0%, 25%  { transform: rotateY(0deg); }
-          35%, 50% { transform: rotateY(-80deg); }
-          60%      { transform: rotateY(0deg); }
-          100%     { transform: rotateY(0deg); }
-        }
-        .hero-door {
-          animation: hero-door-open 6s ease-in-out infinite;
-          transform-style: preserve-3d;
-        }
-
-        @keyframes hero-passenger-hop {
-          0%, 25%   { transform: translate(0, 0); opacity: 0; }
-          28%       { transform: translate(60px, -15px); opacity: 1; }
-          45%       { transform: translate(155px, -12px); opacity: 1; }
-          52%       { transform: translate(175px, -15px) scale(0.7); opacity: 0; }
-          100%      { transform: translate(175px, -15px) scale(0.7); opacity: 0; }
-        }
-        .hero-passenger {
-          animation: hero-passenger-hop 6s ease-in-out infinite;
-        }
-
-        @keyframes hero-wheel-spin {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
-        }
-        .hero-wheel-front, .hero-wheel-back {
-          transform-origin: center;
-          animation: hero-wheel-spin 0.6s linear infinite;
-        }
-
-        @keyframes hero-beam {
-          0%, 100% { opacity: 0.3; }
-          50%      { opacity: 0.5; }
-        }
-        .beam { animation: hero-beam 1.5s ease-in-out infinite; }
-
-        @keyframes hero-motion {
-          0%, 60%   { opacity: 0; }
-          62%, 90%  { opacity: 1; }
-          100%      { opacity: 0; }
-        }
-        .motion-lines { animation: hero-motion 6s ease-out infinite; }
-
-        @keyframes hero-dashes {
-          from { transform: translateX(0); }
-          to   { transform: translateX(-60px); }
-        }
-        .road-dashes { animation: hero-dashes 2s linear infinite; }
-
-        @media (prefers-reduced-motion: reduce) {
-          .hero-car, .hero-door, .hero-passenger, .hero-wheel-front,
-          .hero-wheel-back, .beam, .motion-lines, .road-dashes {
-            animation: none;
+    <div className="flex">
+      <Sidebar links={links} />
+      <div className="flex-1 px-6 py-8 max-w-2xl">
+        <PageHeader
+          icon={Car}
+          eyebrow="New trip"
+          title="Post a vehicle for pooling"
+          subtitle={
+            "Share your trip so others in " +
+            (activeOrg?.org?.name || "your community") +
+            " can join."
           }
-          .hero-passenger { opacity: 1; }
-        }
-      \`}</style>
+        />
+
+        <form
+          onSubmit={submit}
+          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 space-y-4"
+          noValidate
+        >
+          {/* Vehicle type + model */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
+                Vehicle type
+              </label>
+              <div className="relative">
+                <Car className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                <select {...field("vehicleType")} className={inputClass("vehicleType")}>
+                  <option value="car">Car</option>
+                  <option value="bike">Bike</option>
+                  <option value="van">Van</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
+                Vehicle model
+              </label>
+              <div className="relative">
+                <Car className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  {...field("vehicleModel")}
+                  className={inputClass("vehicleModel")}
+                  placeholder="e.g. Honda City"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Vehicle number */}
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
+              Vehicle number
+            </label>
+            <div className="relative">
+              <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                {...field("vehicleNumber")}
+                onChange={(e) =>
+                  setForm({ ...form, vehicleNumber: e.target.value.toUpperCase() })
+                }
+                className={inputClass("vehicleNumber")}
+                placeholder="e.g. TN 59 AB 1234"
+              />
+            </div>
+          </div>
+
+          {/* From / To */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
+                From *
+              </label>
+              <CityInput
+                value={form.startLocation}
+                onChange={(v) => {
+                  setForm({ ...form, startLocation: v });
+                  setTouched((t) => ({ ...t, startLocation: true }));
+                }}
+                onSelect={(v) =>
+                  setForm({ ...form, startLocation: v })
+                }
+                placeholder="Search city or area"
+                icon={MapPin}
+              />
+              {errors.startLocation && (
+                <p className="text-xs text-rose-600 mt-1">Required</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
+                To *
+              </label>
+              <CityInput
+                value={form.destination}
+                onChange={(v) => {
+                  setForm({ ...form, destination: v });
+                  setTouched((t) => ({ ...t, destination: true }));
+                }}
+                onSelect={(v) =>
+                  setForm({ ...form, destination: v })
+                }
+                placeholder="Search city or area"
+                icon={Flag}
+              />
+              {errors.destination && (
+                <p className="text-xs text-rose-600 mt-1">Required</p>
+              )}
+            </div>
+          </div>
+
+          {/* Date / Time */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
+                Date *
+              </label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                <input
+                  type="date"
+                  {...field("travelDate")}
+                  className={inputClass("travelDate")}
+                />
+              </div>
+              {errors.travelDate && (
+                <p className="text-xs text-rose-600 mt-1">Required</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
+                Time *
+              </label>
+              <div className="relative">
+                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                <input
+                  type="time"
+                  {...field("travelTime")}
+                  className={inputClass("travelTime")}
+                />
+              </div>
+              {errors.travelTime && (
+                <p className="text-xs text-rose-600 mt-1">Required</p>
+              )}
+            </div>
+          </div>
+
+          {/* Seats / Fare */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
+                Available seats
+              </label>
+              <div className="relative">
+                <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="number"
+                  min={1}
+                  {...field("totalSeats")}
+                  onChange={(e) =>
+                    setForm({ ...form, totalSeats: Number(e.target.value) })
+                  }
+                  className={inputClass("totalSeats")}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
+                Fare per seat (₹)
+              </label>
+              <div className="relative">
+                <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="number"
+                  min={0}
+                  {...field("farePerSeat")}
+                  onChange={(e) =>
+                    setForm({ ...form, farePerSeat: Number(e.target.value) })
+                  }
+                  className={inputClass("farePerSeat")}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
+              Notes (optional)
+            </label>
+            <div className="relative">
+              <FileText className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+              <textarea
+                {...field("notes")}
+                className={inputClass("notes")}
+                rows={2}
+              />
+            </div>
+          </div>
+
+          <button
+            disabled={!canSubmit}
+            className="w-full flex items-center justify-center gap-2 bg-accent text-white rounded-md py-2.5 font-semibold hover:bg-[#008fad] disabled:opacity-60 disabled:cursor-not-allowed transition"
+          >
+            <Send className="w-4 h-4" />
+            {loading ? "Posting..." : "Post this trip"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
-`, "utf8");
-  console.log("  ✏️  Recreated: frontend/src/components/HeroCar.jsx");
-} else {
-  console.log("  ✓ HeroCar.jsx already exists");
-}
+`);
 
-// ============================================================
-// 2. Patch Home.jsx — add import + render HeroCar in hero
-// ============================================================
-let src = fs.readFileSync(homePath, "utf8");
-
-// Add import if missing
-if (!src.includes('import HeroCar from "../components/HeroCar.jsx"')) {
-  src = src.replace(
-    'import { useAuth } from "../context/AuthContext.jsx";',
-    'import { useAuth } from "../context/AuthContext.jsx";\nimport HeroCar from "../components/HeroCar.jsx";'
-  );
-  console.log("  ✓ Added HeroCar import");
-} else {
-  console.log("  ✓ HeroCar import already present");
-}
-
-// Add <HeroCar /> after the trust strip (the block with 4 items)
-if (!src.includes("<HeroCar")) {
-  // Insert between the trust strip closing </div> and the closing </div> of the hero
-  const trustEndRegex = /(<span className="inline-flex items-center gap-1\.5"><CalendarCheck className="w-3\.5 h-3\.5 text-accent" \/> Auto trip completion<\/span>\s*<\/div>)/;
-  const match = src.match(trustEndRegex);
-
-  if (match) {
-    src = src.replace(
-      trustEndRegex,
-      match[1] + `
-
-          {/* Animated hero car */}
-          <div className="mt-12">
-            <HeroCar />
-          </div>`
-    );
-    console.log("  ✓ Inserted <HeroCar /> into hero section");
-  } else {
-    console.log("  ⚠️  Could not find trust strip — appending a generic insert");
-    // Fallback: insert before the closing of the hero <section>
-    src = src.replace(
-      /(<\/section>\s*\{\/\* ================= HOW IT WORKS ================= \*\/\})/,
-      `  <div className="mt-12"><HeroCar /></div>\n      </section>\n\n      {/* ================= HOW IT WORKS ================= */}`
-    );
-  }
-} else {
-  console.log("  ✓ <HeroCar /> already rendered");
-}
-
-fs.writeFileSync(homePath, src, "utf8");
-
-console.log("\n✅ Hero car restored on homepage.\n");
+console.log("\n✅ PostVehicle.jsx rewritten.\n");
 console.log("Next steps:");
 console.log("  git add .");
-console.log('  git commit -m "Restore animated hero car on homepage"');
+console.log('  git commit -m "Fix PostVehicle.jsx missing imports"');
 console.log("  git push\n");
 console.log("  Then hard refresh (Ctrl + Shift + R) on your site.\n");
