@@ -1,5 +1,7 @@
 import asyncHandler from "express-async-handler";
 import User from "../models/User.js";
+import Otp from "../models/Otp.js";
+import { sendOtpEmail, generateOtp } from "../utils/sendOtp.js";
 import Feedback from "../models/Feedback.js";
 import { generateToken } from "../utils/generateToken.js";
 
@@ -30,11 +32,43 @@ export const register = asyncHandler(async (req, res) => {
 
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) { res.status(400); throw new Error("Email and password are required"); }
+  if (!email || !password) {
+    res.status(400);
+    throw new Error("Email and password are required");
+  }
   const user = await User.findOne({ email: email.toLowerCase() }).select("+password");
-  if (!user || !(await user.matchPassword(password))) { res.status(401); throw new Error("Invalid email or password"); }
-  if (!user.isActive) { res.status(403); throw new Error("Your account has been deactivated"); }
-  res.json({ success: true, data: { user: await publicUser(user), token: generateToken(user._id) } });
+  if (!user || !(await user.matchPassword(password))) {
+    res.status(401);
+    throw new Error("Invalid email or password");
+  }
+  if (!user.isActive) {
+    res.status(403);
+    throw new Error("Your account has been deactivated");
+  }
+
+  const code = generateOtp();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+  await Otp.deleteMany({ user: user._id });
+  await Otp.create({ user: user._id, code, expiresAt });
+
+  try {
+    await sendOtpEmail(user.email, code, user.name);
+  } catch (err) {
+    console.error("Failed to send OTP email:", err.message);
+    res.status(500);
+    throw new Error("Could not send verification email. Please try again.");
+  }
+
+  res.json({
+    success: true,
+    data: {
+      requiresOtp: true,
+      email: user.email,
+      message: "Verification code sent to your email.",
+      ...(process.env.NODE_ENV !== "production" && { devOtp: code }),
+    },
+  });
 });
 
 export const getMe = asyncHandler(async (req, res) => {
@@ -50,4 +84,79 @@ export const updateProfile = asyncHandler(async (req, res) => {
   if (avatar !== undefined) user.avatar = avatar;
   await user.save();
   res.json({ success: true, data: await publicUser(user) });
+});
+
+
+// @route POST /api/auth/verify-otp
+export const verifyOtp = asyncHandler(async (req, res) => {
+  const { email, code } = req.body;
+  if (!email || !code) {
+    res.status(400);
+    throw new Error("Email and code are required");
+  }
+
+  const user = await User.findOne({ email: email.toLowerCase() });
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  const otp = await Otp.findOne({ user: user._id }).sort({ createdAt: -1 });
+  if (!otp) {
+    res.status(400);
+    throw new Error("No active verification code. Please log in again.");
+  }
+  if (otp.expiresAt < new Date()) {
+    await Otp.deleteOne({ _id: otp._id });
+    res.status(400);
+    throw new Error("Code expired. Please log in again.");
+  }
+  if (otp.attempts >= 5) {
+    await Otp.deleteOne({ _id: otp._id });
+    res.status(429);
+    throw new Error("Too many attempts. Please log in again.");
+  }
+  if (otp.code !== String(code).trim()) {
+    otp.attempts += 1;
+    await otp.save();
+    res.status(400);
+    throw new Error("Invalid code");
+  }
+
+  await Otp.deleteOne({ _id: otp._id });
+  const rating = await ratingSummary(user._id);
+
+  res.json({
+    success: true,
+    data: {
+      user: {
+        id: user._id, name: user.name, email: user.email, phone: user.phone,
+        avatar: user.avatar, platformRole: user.platformRole,
+        avgRating: rating.avgRating, ratingCount: rating.ratingCount,
+      },
+      token: generateToken(user._id),
+    },
+  });
+});
+
+// @route POST /api/auth/resend-otp
+export const resendOtp = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email: email?.toLowerCase() });
+  if (!user) { res.status(404); throw new Error("User not found"); }
+
+  const code = generateOtp();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+  await Otp.deleteMany({ user: user._id });
+  await Otp.create({ user: user._id, code, expiresAt });
+  await sendOtpEmail(user.email, code, user.name);
+
+  res.json({
+    success: true,
+    data: {
+      message: "New code sent",
+      ...(process.env.NODE_ENV !== "production" && { devOtp: code }),
+    },
+  });
 });
