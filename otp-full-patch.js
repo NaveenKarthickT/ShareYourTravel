@@ -1,9 +1,8 @@
 // ============================================================
-// Creative Pages Patch
-// Adds visual polish to: Login, Register, OTP screens, Dashboard,
-// Search, Vehicle details, Trips, Admin, Profile — no logic changes.
+// Restore Hero Car
+// Adds HeroCar animation back into the creative homepage
 // Run from carpool-platform root:
-//   node creative-pages-patch.js
+//   node restore-hero-car.js
 // ============================================================
 
 const fs = require("fs");
@@ -15,648 +14,227 @@ if (!fs.existsSync(ROOT)) {
   process.exit(1);
 }
 
-const write = (relPath, content) => {
-  const full = path.join(ROOT, relPath);
-  fs.mkdirSync(path.dirname(full), { recursive: true });
-  fs.writeFileSync(full, content.replace(/^\n/, ""), "utf8");
-  console.log("  ✏️  " + path.relative(process.cwd(), full));
-};
-
-console.log("\n🎨 Applying creative page polish...\n");
+const homePath = path.join(ROOT, "src/pages/Home.jsx");
+const heroCarPath = path.join(ROOT, "src/components/HeroCar.jsx");
 
 // ============================================================
-// 1. NEW: frontend/src/components/PageHeader.jsx
-//    Reusable hero-style page header with gradient + icon
+// 1. Make sure HeroCar.jsx exists
 // ============================================================
-write("src/components/PageHeader.jsx", `
-import { Sparkles } from "lucide-react";
+if (!fs.existsSync(heroCarPath)) {
+  console.log("  ⚠️  HeroCar.jsx not found — recreating it");
+  fs.mkdirSync(path.dirname(heroCarPath), { recursive: true });
+  fs.writeFileSync(heroCarPath, `// Always-looping animated car with passenger pickup.
+// Sized for the homepage hero.
 
-export default function PageHeader({
-  icon: Icon,
-  eyebrow,
-  title,
-  subtitle,
-  action,
-  accent = "accent",
-}) {
-  const bgMap = {
-    accent: "from-accent-soft via-white to-white dark:from-slate-900 dark:via-slate-950 dark:to-slate-950",
-    primary: "from-primary/5 via-white to-white dark:from-slate-900 dark:via-slate-950 dark:to-slate-950",
-  };
-  const iconBgMap = {
-    accent: "bg-accent-soft dark:bg-slate-800 text-accent",
-    primary: "bg-primary/10 dark:bg-slate-800 text-primary dark:text-sky-300",
-  };
-
+export default function HeroCar() {
   return (
-    <section className={\`relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-gradient-to-br \${bgMap[accent]} mb-8\`}>
-      {/* ambient blobs */}
-      <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-16 -left-16 w-64 h-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+    <div className="relative w-full max-w-2xl mx-auto aspect-[3/1] select-none">
+      <svg viewBox="0 0 600 200" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#E0F2FE" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="#E0F2FE" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="carBody" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#00C6E6" />
+            <stop offset="100%" stopColor="#00A3C4" />
+          </linearGradient>
+          <radialGradient id="sun" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#FEF3C7" />
+            <stop offset="100%" stopColor="#FEF3C7" stopOpacity="0" />
+          </radialGradient>
+        </defs>
 
-      <div className="relative px-6 py-8 sm:px-8 sm:py-10 flex flex-col sm:flex-row sm:items-center gap-5">
-        {Icon && (
-          <div className={\`shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center \${iconBgMap[accent]}\`}>
-            <Icon className="w-6 h-6" />
-          </div>
-        )}
-        <div className="flex-1 min-w-0">
-          {eyebrow && (
-            <div className="inline-flex items-center gap-1.5 text-[0.7rem] font-bold uppercase tracking-widest text-accent mb-2">
-              <Sparkles className="w-3 h-3" />
-              {eyebrow}
-            </div>
-          )}
-          <h1 className="text-2xl sm:text-3xl font-bold text-primary dark:text-sky-300 tracking-tight">
-            {title}
-          </h1>
-          {subtitle && (
-            <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400 max-w-2xl">
-              {subtitle}
-            </p>
-          )}
-        </div>
-        {action && <div className="shrink-0">{action}</div>}
-      </div>
-    </section>
-  );
-}
-`);
+        <rect width="600" height="200" fill="url(#sky)" />
+        <circle cx="500" cy="60" r="80" fill="url(#sun)" opacity="0.6" />
 
-// ============================================================
-// 2. NEW: frontend/src/components/AnimatedCard.jsx
-//    A card that fades-up on mount with staggered delay
-// ============================================================
-write("src/components/AnimatedCard.jsx", `
-import { useEffect, useRef, useState } from "react";
+        <g opacity="0.15" fill="#0B2B4F">
+          <rect x="30" y="120" width="20" height="40" />
+          <rect x="60" y="100" width="25" height="60" />
+          <rect x="95" y="130" width="18" height="30" />
+          <rect x="470" y="110" width="22" height="50" />
+          <rect x="500" y="95" width="28" height="65" />
+          <rect x="540" y="120" width="20" height="40" />
+        </g>
 
-export default function AnimatedCard({ children, delay = 0, className = "" }) {
-  const ref = useRef(null);
-  const [visible, setVisible] = useState(false);
+        <rect x="0" y="160" width="600" height="8" rx="4" fill="#cbd5e1" />
+        <rect x="0" y="162" width="600" height="4" rx="2" fill="#94a3b8" opacity="0.7" />
 
-  useEffect(() => {
-    const timer = setTimeout(() => setVisible(true), delay);
-    return () => clearTimeout(timer);
-  }, [delay]);
+        <g className="road-dashes">
+          {[20, 100, 180, 260, 340, 420, 500].map((x) => (
+            <rect key={x} x={x} y="163" width="40" height="2" rx="1" fill="#fff" opacity="0.9" />
+          ))}
+        </g>
 
-  return (
-    <div
-      ref={ref}
-      className={
-        "transition-all duration-500 ease-out " +
-        (visible
-          ? "opacity-100 translate-y-0"
-          : "opacity-0 translate-y-2") +
-        " " +
-        className
-      }
-    >
-      {children}
-    </div>
-  );
-}
-`);
+        <g className="hero-passenger">
+          <circle cx="130" cy="105" r="9" fill="#0B2B4F" />
+          <rect x="122" y="116" width="16" height="24" rx="4" fill="#00A3C4" />
+          <rect x="124" y="140" width="5" height="16" rx="2" fill="#0B2B4F" />
+          <rect x="131" y="140" width="5" height="16" rx="2" fill="#0B2B4F" />
+        </g>
 
-// ============================================================
-// 3. UPDATE: Login.jsx — polished split screen with gradient
-// ============================================================
-let loginSrc = fs.readFileSync(path.join(ROOT, "src/pages/Login.jsx"), "utf8");
+        <g className="hero-car">
+          <ellipse cx="320" cy="172" rx="120" ry="6" fill="#0B2B4F" opacity="0.12" />
 
-loginSrc = loginSrc.replace(
-  /function BrandPanel\(\) \{[\s\S]*?\n\}\n/,
-  `function BrandPanel() {
-  return (
-    <div className="hidden sm:flex sm:w-2/5 relative overflow-hidden bg-gradient-to-br from-primary via-primary-light to-[#0a2240] text-white p-8 flex-col justify-between">
-      {/* Floating ambient blobs */}
-      <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-accent/20 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
+          <path d="M180,155 L190,105 Q200,85 235,85 L410,85 Q445,85 455,105 L465,155 Z" fill="url(#carBody)" />
+          <path d="M215,105 Q225,65 265,65 L375,65 Q415,65 425,105 Z" fill="#0B2B4F" />
+          <path d="M228,102 Q235,75 262,75 L305,75 L305,102 Z" fill="#bae6fd" opacity="0.9" />
+          <path d="M312,75 L355,75 Q385,75 392,102 L312,102 Z" fill="#bae6fd" opacity="0.9" />
 
-      {/* Floating car icon */}
-      <div className="absolute top-1/3 right-6 opacity-10 pointer-events-none">
-        <Car className="w-32 h-32" />
-      </div>
+          <g className="hero-door" style={{ transformOrigin: "310px 120px" }}>
+            <rect x="305" y="102" width="6" height="45" rx="2" fill="#0B2B4F" opacity="0.8" />
+            <circle cx="307" cy="125" r="2" fill="#00A3C4" />
+          </g>
 
-      <div className="relative flex items-center gap-2 font-bold text-lg">
-        <span className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center shadow-inner">
-          V
-        </span>
-        Share Your Vehicle
-      </div>
+          <rect x="456" y="132" width="10" height="10" rx="3" fill="#fde68a" />
+          <path className="beam" d="M466,137 L520,120 L520,155 Z" fill="#fde68a" opacity="0.35" />
 
-      <div className="relative">
-        <h2 className="text-2xl font-bold leading-snug mb-4">
-          Ride with people you actually know.
-        </h2>
-        <ul className="space-y-3 text-sm text-white/85">
-          <li className="flex items-start gap-2.5">
-            <span className="w-5 h-5 rounded-full bg-accent/30 flex items-center justify-center shrink-0 mt-0.5">
-              <Car className="w-3 h-3" />
-            </span>
-            <span>Every community runs its own pooling server</span>
-          </li>
-          <li className="flex items-start gap-2.5">
-            <span className="w-5 h-5 rounded-full bg-accent/30 flex items-center justify-center shrink-0 mt-0.5">
-              <Users2 className="w-3 h-3" />
-            </span>
-            <span>Admin-approved, private membership</span>
-          </li>
-          <li className="flex items-start gap-2.5">
-            <span className="w-5 h-5 rounded-full bg-accent/30 flex items-center justify-center shrink-0 mt-0.5">
-              <MapPinned className="w-3 h-3" />
-            </span>
-            <span>Route-based trip search &amp; requests</span>
-          </li>
-        </ul>
-      </div>
+          <rect x="178" y="132" width="6" height="10" rx="2" fill="#f43f5e" opacity="0.8" />
 
-      <div className="relative text-white/40 text-xs">
-        © {new Date().getFullYear()} Share Your Vehicle
-      </div>
-    </div>
-  );
-}
-`
-);
+          <circle cx="235" cy="160" r="16" fill="#0F172A" />
+          <circle cx="235" cy="160" r="6" fill="#cbd5e1" className="hero-wheel-front" />
+          <circle cx="410" cy="160" r="16" fill="#0F172A" />
+          <circle cx="410" cy="160" r="6" fill="#cbd5e1" className="hero-wheel-back" />
+        </g>
 
-fs.writeFileSync(path.join(ROOT, "src/pages/Login.jsx"), loginSrc, "utf8");
-console.log("  🔧 Login.jsx");
+        <g className="motion-lines" opacity="0">
+          <rect x="140" y="110" width="30" height="3" rx="1.5" fill="#00A3C4" />
+          <rect x="120" y="130" width="40" height="3" rx="1.5" fill="#00A3C4" opacity="0.6" />
+          <rect x="150" y="145" width="25" height="3" rx="1.5" fill="#00A3C4" opacity="0.4" />
+        </g>
+      </svg>
 
-// ============================================================
-// 4. UPDATE: Register.jsx — polished split screen
-// ============================================================
-let regSrc = fs.readFileSync(path.join(ROOT, "src/pages/Register.jsx"), "utf8");
+      <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white dark:from-slate-950 to-transparent pointer-events-none" />
 
-regSrc = regSrc.replace(
-  /function BrandPanel\(\) \{[\s\S]*?\n\}\n/,
-  `function BrandPanel() {
-  return (
-    <div className="hidden sm:flex sm:w-2/5 relative overflow-hidden bg-gradient-to-br from-accent to-primary text-white p-8 flex-col justify-between">
-      <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-24 -right-24 w-72 h-72 rounded-full bg-primary/30 blur-3xl pointer-events-none" />
-
-      <div className="relative flex items-center gap-2 font-bold text-lg">
-        <span className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center">
-          V
-        </span>
-        Share Your Vehicle
-      </div>
-
-      <div className="relative">
-        <h2 className="text-2xl font-bold leading-snug mb-4">
-          Join a private pooling community.
-        </h2>
-        <ul className="space-y-3 text-sm text-white/85">
-          <li className="flex items-start gap-2.5">
-            <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
-              <ShieldCheck className="w-3 h-3" />
-            </span>
-            <span>Verified members only</span>
-          </li>
-          <li className="flex items-start gap-2.5">
-            <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
-              <Users2 className="w-3 h-3" />
-            </span>
-            <span>Admin-approved access</span>
-          </li>
-          <li className="flex items-start gap-2.5">
-            <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
-              <MapPinned className="w-3 h-3" />
-            </span>
-            <span>Post &amp; find rides instantly</span>
-          </li>
-        </ul>
-      </div>
-
-      <div className="relative text-white/40 text-xs">
-        © {new Date().getFullYear()} Share Your Vehicle
-      </div>
-    </div>
-  );
-}
-`
-);
-
-fs.writeFileSync(path.join(ROOT, "src/pages/Register.jsx"), regSrc, "utf8");
-console.log("  🔧 Register.jsx");
-
-// ============================================================
-// 5. UPDATE: UserDashboard.jsx — PageHeader + AnimatedCard
-// ============================================================
-let dashSrc = fs.readFileSync(path.join(ROOT, "src/pages/UserDashboard.jsx"), "utf8");
-
-if (!dashSrc.includes("PageHeader")) {
-  dashSrc = dashSrc.replace(
-    `import { SkeletonGrid, SkeletonStatRow } from "../components/Skeleton.jsx";`,
-    `import { SkeletonGrid, SkeletonStatRow } from "../components/Skeleton.jsx";
-import PageHeader from "../components/PageHeader.jsx";
-import AnimatedCard from "../components/AnimatedCard.jsx";
-import { LayoutDashboard } from "lucide-react";`
-  );
-
-  // Replace the title block
-  dashSrc = dashSrc.replace(
-    /<h1 className="text-2xl font-bold mb-1 text-primary dark:text-sky-300">Welcome back<\/h1>\s*<p className="text-slate-500 mb-6">\{activeOrg\?\.org\?\.name\} community dashboard<\/p>/,
-    `<PageHeader
-        icon={LayoutDashboard}
-        eyebrow="Dashboard"
-        title="Welcome back"
-        subtitle={(activeOrg?.org?.name || "Your") + " community dashboard"}
-      />`
-  );
-
-  // Wrap stat cards in AnimatedCard with stagger
-  dashSrc = dashSrc.replace(
-    /\{loading \? \(\s*<SkeletonStatRow count=\{3\} \/>\s*\) : \(\s*<div className="grid sm:grid-cols-3 gap-4 mb-8">\s*\{\[\s*\["Confirmed trips", counts\.confirmed, "\/trips\/confirmed"\],\s*\["Pending requests", counts\.requested, "\/trips\/requests"\],\s*\["Completed trips", counts\.completed, "\/trips\/completed"\],\s*\]\.map\(\(\[label, value, to\]\) => \(\s*<Link key=\{label\} to=\{to\}\s*className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 hover:border-accent hover:shadow-sm transition">\s*<div className="text-3xl font-bold text-primary dark:text-sky-300">\{value\}<\/div>\s*<div className="text-sm text-slate-500 mt-1">\{label\}<\/div>\s*<\/Link>\s*\)\)\}\s*<\/div>\s*\)\}/,
-    `{loading ? (
-          <SkeletonStatRow count={3} />
-        ) : (
-          <div className="grid sm:grid-cols-3 gap-4 mb-8">
-            {[
-              ["Confirmed trips", counts.confirmed, "/trips/confirmed"],
-              ["Pending requests", counts.requested, "/trips/requests"],
-              ["Completed trips", counts.completed, "/trips/completed"],
-            ].map(([label, value, to], i) => (
-              <AnimatedCard key={label} delay={i * 80}>
-                <Link to={to}
-                  className="block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 hover:border-accent hover:shadow-md hover:-translate-y-0.5 transition">
-                  <div className="text-3xl font-bold text-primary dark:text-sky-300">{value}</div>
-                  <div className="text-sm text-slate-500 mt-1">{label}</div>
-                </Link>
-              </AnimatedCard>
-            ))}
-          </div>
-        )}`
-  );
-
-  fs.writeFileSync(path.join(ROOT, "src/pages/UserDashboard.jsx"), dashSrc, "utf8");
-  console.log("  🔧 UserDashboard.jsx");
-} else {
-  console.log("  ✓ UserDashboard.jsx already has PageHeader");
-}
-
-// ============================================================
-// 6. UPDATE: SearchVehicles.jsx — PageHeader
-// ============================================================
-let searchSrc = fs.readFileSync(path.join(ROOT, "src/pages/SearchVehicles.jsx"), "utf8");
-
-if (!searchSrc.includes("PageHeader")) {
-  searchSrc = searchSrc.replace(
-    `import CarLoader from "../components/CarLoader.jsx";`,
-    `import CarLoader from "../components/CarLoader.jsx";
-import PageHeader from "../components/PageHeader.jsx";`
-  );
-
-  searchSrc = searchSrc.replace(
-    /<h1 className="text-2xl font-bold mb-1 text-primary dark:text-sky-300">Search vehicles<\/h1>\s*<p className="text-slate-500 mb-6">Find a pooling trip in \{activeOrg\?\.org\?\.name\}\.<\/p>/,
-    `<PageHeader
-        icon={SearchIcon}
-        eyebrow="Find a ride"
-        title="Search vehicles"
-        subtitle={"Find a pooling trip in " + (activeOrg?.org?.name || "your community") + "."}
-      />`
-  );
-
-  fs.writeFileSync(path.join(ROOT, "src/pages/SearchVehicles.jsx"), searchSrc, "utf8");
-  console.log("  🔧 SearchVehicles.jsx");
-} else {
-  console.log("  ✓ SearchVehicles.jsx already has PageHeader");
-}
-
-// ============================================================
-// 7. UPDATE: TripsList.jsx — PageHeader
-// ============================================================
-let tripsSrc = fs.readFileSync(path.join(ROOT, "src/pages/TripsList.jsx"), "utf8");
-
-if (!tripsSrc.includes("PageHeader")) {
-  tripsSrc = tripsSrc.replace(
-    `import { SkeletonList } from "../components/Skeleton.jsx";`,
-    `import { SkeletonList } from "../components/Skeleton.jsx";
-import PageHeader from "../components/PageHeader.jsx";
-import { Route } from "lucide-react";`
-  );
-
-  tripsSrc = tripsSrc.replace(
-    /<h1 className="text-2xl font-bold mb-6 text-primary dark:text-sky-300">\{title\}<\/h1>/,
-    `<PageHeader
-        icon={Route}
-        eyebrow="Trips"
-        title={title}
-        subtitle="Everything in one view."
-      />`
-  );
-
-  fs.writeFileSync(path.join(ROOT, "src/pages/TripsList.jsx"), tripsSrc, "utf8");
-  console.log("  🔧 TripsList.jsx");
-} else {
-  console.log("  ✓ TripsList.jsx already has PageHeader");
-}
-
-// ============================================================
-// 8. UPDATE: Profile.jsx — PageHeader
-// ============================================================
-let profSrc = fs.readFileSync(path.join(ROOT, "src/pages/Profile.jsx"), "utf8");
-
-if (!profSrc.includes("PageHeader")) {
-  profSrc = profSrc.replace(
-    `import { useToast } from "../components/Toast.jsx";`,
-    `import { useToast } from "../components/Toast.jsx";
-import PageHeader from "../components/PageHeader.jsx";
-import { UserCircle2 } from "lucide-react";`
-  );
-
-  profSrc = profSrc.replace(
-    /<h1 className="text-2xl font-bold text-primary dark:text-sky-300 mb-6">Your profile<\/h1>/,
-    `<PageHeader
-        icon={UserCircle2}
-        eyebrow="Account"
-        title="Your profile"
-        subtitle="Keep your details up to date so drivers and passengers can reach you."
-      />`
-  );
-
-  fs.writeFileSync(path.join(ROOT, "src/pages/Profile.jsx"), profSrc, "utf8");
-  console.log("  🔧 Profile.jsx");
-} else {
-  console.log("  ✓ Profile.jsx already has PageHeader");
-}
-
-// ============================================================
-// 9. UPDATE: PostVehicle.jsx — PageHeader
-// ============================================================
-let postSrc = fs.readFileSync(path.join(ROOT, "src/pages/PostVehicle.jsx"), "utf8");
-
-if (!postSrc.includes("PageHeader")) {
-  postSrc = postSrc.replace(
-    `import CityInput from "../components/CityInput.jsx";`,
-    `import CityInput from "../components/CityInput.jsx";
-import PageHeader from "../components/PageHeader.jsx";
-import { PlusCircle } from "lucide-react";`
-  );
-
-  postSrc = postSrc.replace(
-    /<h1 className="text-2xl font-bold mb-1 text-primary dark:text-sky-300">Post a vehicle for pooling<\/h1>\s*<p className="text-slate-500 mb-6">Share your trip so others in <strong>\{activeOrg\?\.org\?\.name\}<\/strong> can join\.<\/p>/,
-    `<PageHeader
-        icon={PlusCircle}
-        eyebrow="New trip"
-        title="Post a vehicle for pooling"
-        subtitle={"Share your trip so others in " + (activeOrg?.org?.name || "your community") + " can join."}
-      />`
-  );
-
-  fs.writeFileSync(path.join(ROOT, "src/pages/PostVehicle.jsx"), postSrc, "utf8");
-  console.log("  🔧 PostVehicle.jsx");
-} else {
-  console.log("  ✓ PostVehicle.jsx already has PageHeader");
-}
-
-// ============================================================
-// 10. UPDATE: AdminDashboard.jsx — PageHeader on Overview
-// ============================================================
-let adminSrc = fs.readFileSync(path.join(ROOT, "src/pages/AdminDashboard.jsx"), "utf8");
-
-if (!adminSrc.includes("PageHeader")) {
-  adminSrc = adminSrc.replace(
-    `import { useToast } from "../components/Toast.jsx";`,
-    `import { useToast } from "../components/Toast.jsx";
-import PageHeader from "../components/PageHeader.jsx";
-import { LayoutDashboard as DashIcon } from "lucide-react";`
-  );
-
-  adminSrc = adminSrc.replace(
-    /<h1 className="text-2xl font-bold mb-1 text-primary dark:text-sky-300">Admin dashboard<\/h1>\s*<p className="text-slate-500">Monitoring \{activeOrg\?\.org\?\.name\}<\/p>/,
-    `<PageHeader
-        icon={DashIcon}
-        eyebrow="Admin"
-        title="Admin dashboard"
-        subtitle={"Monitoring " + (activeOrg?.org?.name || "your organization")}
-        action={
-          <Link to="/admin/add-vehicle"
-            className="inline-flex items-center gap-1.5 bg-accent text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-[#008fad]">
-            <PlusCircle className="w-4 h-4" /> Post a vehicle
-          </Link>
+      <style>{\`
+        @keyframes hero-car-drive {
+          0%    { transform: translateX(-400px); }
+          18%   { transform: translateX(0); }
+          60%   { transform: translateX(0); }
+          100%  { transform: translateX(500px); }
         }
-      />`
-  );
+        .hero-car {
+          animation: hero-car-drive 6s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+          transform-origin: center;
+        }
 
-  fs.writeFileSync(path.join(ROOT, "src/pages/AdminDashboard.jsx"), adminSrc, "utf8");
-  console.log("  🔧 AdminDashboard.jsx");
-} else {
-  console.log("  ✓ AdminDashboard.jsx already has PageHeader");
-}
+        @keyframes hero-door-open {
+          0%, 25%  { transform: rotateY(0deg); }
+          35%, 50% { transform: rotateY(-80deg); }
+          60%      { transform: rotateY(0deg); }
+          100%     { transform: rotateY(0deg); }
+        }
+        .hero-door {
+          animation: hero-door-open 6s ease-in-out infinite;
+          transform-style: preserve-3d;
+        }
 
-// ============================================================
-// 11. UPDATE: index.css — add subtle global animations
-// ============================================================
-let cssSrc = fs.readFileSync(path.join(ROOT, "src/index.css"), "utf8");
+        @keyframes hero-passenger-hop {
+          0%, 25%   { transform: translate(0, 0); opacity: 0; }
+          28%       { transform: translate(60px, -15px); opacity: 1; }
+          45%       { transform: translate(155px, -12px); opacity: 1; }
+          52%       { transform: translate(175px, -15px) scale(0.7); opacity: 0; }
+          100%      { transform: translate(175px, -15px) scale(0.7); opacity: 0; }
+        }
+        .hero-passenger {
+          animation: hero-passenger-hop 6s ease-in-out infinite;
+        }
 
-if (!cssSrc.includes("fade-up-soft")) {
-  cssSrc += `
+        @keyframes hero-wheel-spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        .hero-wheel-front, .hero-wheel-back {
+          transform-origin: center;
+          animation: hero-wheel-spin 0.6s linear infinite;
+        }
 
-/* ---------- Creative page animations ---------- */
-@keyframes fade-up-soft {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+        @keyframes hero-beam {
+          0%, 100% { opacity: 0.3; }
+          50%      { opacity: 0.5; }
+        }
+        .beam { animation: hero-beam 1.5s ease-in-out infinite; }
 
-@keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
+        @keyframes hero-motion {
+          0%, 60%   { opacity: 0; }
+          62%, 90%  { opacity: 1; }
+          100%      { opacity: 0; }
+        }
+        .motion-lines { animation: hero-motion 6s ease-out infinite; }
 
-.animate-fade-up {
-  animation: fade-up-soft 0.5s ease-out both;
-}
+        @keyframes hero-dashes {
+          from { transform: translateX(0); }
+          to   { transform: translateX(-60px); }
+        }
+        .road-dashes { animation: hero-dashes 2s linear infinite; }
 
-/* Gradient text utility */
-.text-gradient {
-  background: linear-gradient(135deg, #00A3C4 0%, #0B2B4F 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-/* Card hover lift — subtle */
-.lift-on-hover {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.lift-on-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1);
-}
-
-/* Respect reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .animate-fade-up,
-  .lift-on-hover {
-    animation: none !important;
-    transition: none !important;
-  }
-}
-`;
-  fs.writeFileSync(path.join(ROOT, "src/index.css"), cssSrc, "utf8");
-  console.log("  🔧 index.css");
-} else {
-  console.log("  ✓ index.css already has animations");
-}
-
-// ============================================================
-// 12. REPLACE: Home.jsx — brighter, more visual, still no animation
-// ============================================================
-write("src/pages/Home.jsx", `
-import { Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx";
-import {
-  Car, Users2, MapPinned, Shield, Wallet, Route, Sparkles, Star,
-  Building2, CalendarCheck, ArrowRight,
-} from "lucide-react";
-
-export default function Home() {
-  const { user } = useAuth();
-  const primaryCTA = user ? "/organizations" : "/register";
-  const primaryLabel = user ? "Choose your community" : "Get Started";
-
-  return (
-    <div className="overflow-hidden">
-      {/* ================= HERO ================= */}
-      <section className="relative bg-gradient-to-b from-accent-soft/60 via-white to-white dark:from-slate-900 dark:via-slate-950 dark:to-slate-950">
-        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
-        <div className="absolute -top-10 right-0 w-80 h-80 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-
-        <div className="relative max-w-6xl mx-auto px-4 pt-16 pb-14 text-center">
-          <div className="inline-flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full px-4 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 shadow-sm mb-6 animate-fade-up">
-            <Sparkles className="w-3.5 h-3.5 text-accent" />
-            Verified communities · Admin-approved access
-          </div>
-
-          <h1 className="text-4xl sm:text-6xl font-extrabold leading-tight tracking-tight animate-fade-up">
-            <span className="text-primary dark:text-sky-300">Vehicle Pooling,</span>
-            <br />
-            <span className="text-gradient">Community by Community</span>
-          </h1>
-
-          <p className="mt-5 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto animate-fade-up">
-            Share Your Vehicle connects people within your residency, tech park or company
-            into independent, admin-managed pooling communities.
-          </p>
-
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 animate-fade-up">
-            <Link to={primaryCTA}
-              className="inline-flex items-center gap-2 bg-accent text-white rounded-full px-7 py-3 font-semibold shadow-lg shadow-accent/20 hover:bg-[#008fad] hover:-translate-y-0.5 transition">
-              {primaryLabel} <ArrowRight className="w-4 h-4" />
-            </Link>
-            {!user && (
-              <Link to="/login"
-                className="inline-flex items-center gap-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-full px-7 py-3 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition">
-                Login
-              </Link>
-            )}
-          </div>
-
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-xs text-slate-500 dark:text-slate-400 animate-fade-up">
-            <span className="inline-flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-accent" /> Verified members only</span>
-            <span className="inline-flex items-center gap-1.5"><Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" /> Rating-based trust</span>
-            <span className="inline-flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5 text-accent" /> Multi-tenant by design</span>
-            <span className="inline-flex items-center gap-1.5"><CalendarCheck className="w-3.5 h-3.5 text-accent" /> Auto trip completion</span>
-          </div>
-        </div>
-      </section>
-
-      {/* ================= HOW IT WORKS ================= */}
-      <section className="max-w-6xl mx-auto px-4 py-20">
-        <div className="text-center mb-12">
-          <p className="text-xs font-bold uppercase tracking-widest text-accent mb-2">Simple by design</p>
-          <h2 className="text-3xl font-bold text-primary dark:text-sky-300">How it works</h2>
-          <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-xl mx-auto">
-            Four easy steps from discovering a community to rating your ride.
-          </p>
-        </div>
-        <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-5">
-          {[
-            { icon: Building2, title: "Pick a community", body: "Join a pooling server for your residency or workplace — or start your own." },
-            { icon: Shield, title: "Get approved", body: "The community admin reviews and approves your membership request." },
-            { icon: Car, title: "Post or search", body: "Offer a seat in your vehicle, or search trips others have posted." },
-            { icon: Star, title: "Ride & rate", body: "Book a seat, complete the trip, and leave feedback for the driver." },
-          ].map((step, i) => (
-            <div key={step.title}
-              className="group relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 hover:shadow-lg hover:border-accent/40 hover:-translate-y-0.5 transition">
-              <div className="absolute top-4 right-4 text-5xl font-black text-slate-100 dark:text-slate-800 leading-none select-none">
-                {i + 1}
-              </div>
-              <div className="relative w-11 h-11 rounded-xl bg-accent-soft dark:bg-slate-800 flex items-center justify-center mb-4 group-hover:scale-110 transition">
-                <step.icon className="w-5 h-5 text-accent" />
-              </div>
-              <h3 className="relative font-semibold text-slate-800 dark:text-slate-200 mb-1.5">{step.title}</h3>
-              <p className="relative text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{step.body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ================= WHY ================= */}
-      <section className="bg-primary text-white py-20 relative overflow-hidden">
-        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
-        <div className="relative max-w-6xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <p className="text-xs font-bold uppercase tracking-widest text-accent mb-2">Built for real communities</p>
-            <h2 className="text-3xl font-bold">Why Share Your Vehicle</h2>
-          </div>
-          <div className="grid sm:grid-cols-3 gap-8">
-            {[
-              { icon: Wallet, title: "Save money", body: "Split fuel and toll costs with people on the same route." },
-              { icon: Route, title: "Cut congestion", body: "Fewer cars on the road for the same daily commute." },
-              { icon: Users2, title: "Ride with your community", body: "Each organization runs its own private, admin-moderated pool." },
-            ].map((item) => (
-              <div key={item.title} className="text-center">
-                <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-4 backdrop-blur">
-                  <item.icon className="w-6 h-6 text-accent" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
-                <p className="text-white/70 text-sm leading-relaxed">{item.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ================= CTA ================= */}
-      <section className="max-w-6xl mx-auto px-4 py-20 text-center">
-        <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-accent mb-3">
-          <MapPinned className="w-3.5 h-3.5" /> Multi-tenant by design
-        </div>
-        <h2 className="text-3xl font-bold text-primary dark:text-sky-300 mb-3">
-          Every organization gets its own pooling server
-        </h2>
-        <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-8">
-          Independent communities — separate users, admins, vehicles, bookings and chats.
-        </p>
-        <div className="flex flex-wrap justify-center gap-3 mb-8">
-          {["ABC Residency Pooling", "BA IT Park Pooling", "Green Ride Co", "Metro Poolers"].map((name) => (
-            <span key={name}
-              className="px-4 py-2 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm">
-              {name}
-            </span>
-          ))}
-        </div>
-        <Link to={user ? "/organizations" : "/register"}
-          className="inline-flex items-center gap-2 bg-accent text-white rounded-full px-7 py-3 font-semibold shadow-lg shadow-accent/20 hover:bg-[#008fad] hover:-translate-y-0.5 transition">
-          Find or create your community <ArrowRight className="w-4 h-4" />
-        </Link>
-      </section>
+        @media (prefers-reduced-motion: reduce) {
+          .hero-car, .hero-door, .hero-passenger, .hero-wheel-front,
+          .hero-wheel-back, .beam, .motion-lines, .road-dashes {
+            animation: none;
+          }
+          .hero-passenger { opacity: 1; }
+        }
+      \`}</style>
     </div>
   );
 }
-`);
+`, "utf8");
+  console.log("  ✏️  Recreated: frontend/src/components/HeroCar.jsx");
+} else {
+  console.log("  ✓ HeroCar.jsx already exists");
+}
 
-console.log("\n✅ Creative page polish applied!\n");
-console.log("What changed:");
-console.log("  • PageHeader component with gradient hero card + icon");
-console.log("  • AnimatedCard with fade-up stagger");
-console.log("  • Login/Register: gradient brand panel + ambient blobs");
-console.log("  • Homepage: brighter hero + gradient text + floating icons");
-console.log("  • New animations in index.css (fade-up, gradient-text, lift)");
-console.log("");
+// ============================================================
+// 2. Patch Home.jsx — add import + render HeroCar in hero
+// ============================================================
+let src = fs.readFileSync(homePath, "utf8");
+
+// Add import if missing
+if (!src.includes('import HeroCar from "../components/HeroCar.jsx"')) {
+  src = src.replace(
+    'import { useAuth } from "../context/AuthContext.jsx";',
+    'import { useAuth } from "../context/AuthContext.jsx";\nimport HeroCar from "../components/HeroCar.jsx";'
+  );
+  console.log("  ✓ Added HeroCar import");
+} else {
+  console.log("  ✓ HeroCar import already present");
+}
+
+// Add <HeroCar /> after the trust strip (the block with 4 items)
+if (!src.includes("<HeroCar")) {
+  // Insert between the trust strip closing </div> and the closing </div> of the hero
+  const trustEndRegex = /(<span className="inline-flex items-center gap-1\.5"><CalendarCheck className="w-3\.5 h-3\.5 text-accent" \/> Auto trip completion<\/span>\s*<\/div>)/;
+  const match = src.match(trustEndRegex);
+
+  if (match) {
+    src = src.replace(
+      trustEndRegex,
+      match[1] + `
+
+          {/* Animated hero car */}
+          <div className="mt-12">
+            <HeroCar />
+          </div>`
+    );
+    console.log("  ✓ Inserted <HeroCar /> into hero section");
+  } else {
+    console.log("  ⚠️  Could not find trust strip — appending a generic insert");
+    // Fallback: insert before the closing of the hero <section>
+    src = src.replace(
+      /(<\/section>\s*\{\/\* ================= HOW IT WORKS ================= \*\/\})/,
+      `  <div className="mt-12"><HeroCar /></div>\n      </section>\n\n      {/* ================= HOW IT WORKS ================= */}`
+    );
+  }
+} else {
+  console.log("  ✓ <HeroCar /> already rendered");
+}
+
+fs.writeFileSync(homePath, src, "utf8");
+
+console.log("\n✅ Hero car restored on homepage.\n");
 console.log("Next steps:");
 console.log("  git add .");
-console.log('  git commit -m "Add creative polish to all pages"');
+console.log('  git commit -m "Restore animated hero car on homepage"');
 console.log("  git push\n");
 console.log("  Then hard refresh (Ctrl + Shift + R) on your site.\n");

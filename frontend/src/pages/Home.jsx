@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import HeroCar from "../components/HeroCar.jsx";
 import {
   Car, Users2, MapPinned, Shield, Wallet, Route, Sparkles, Star,
   Building2, CalendarCheck, ArrowRight,
@@ -52,6 +53,11 @@ export default function Home() {
             <span className="inline-flex items-center gap-1.5"><Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" /> Rating-based trust</span>
             <span className="inline-flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5 text-accent" /> Multi-tenant by design</span>
             <span className="inline-flex items-center gap-1.5"><CalendarCheck className="w-3.5 h-3.5 text-accent" /> Auto trip completion</span>
+          </div>
+
+          {/* Animated hero car */}
+          <div className="mt-12">
+            <HeroCar />
           </div>
         </div>
       </section>
