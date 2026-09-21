@@ -1,8 +1,9 @@
 // ============================================================
-// SYT Creative Icon Patch
-// Monogram: SYT (ShareYourTravel)
+// SYT Car Icon Patch
+// Replaces the SYT icon with a car + route design that still
+// shows the SYT monogram.
 // Run from carpool-platform root:
-//   node syt-icon-patch.js
+//   node syt-car-icon-patch.js
 // ============================================================
 
 const fs = require("fs");
@@ -21,31 +22,14 @@ const write = (relPath, content) => {
   console.log("  ✏️  " + path.relative(process.cwd(), full));
 };
 
-const patch = (relPath, edits) => {
-  const full = path.join(ROOT, relPath);
-  if (!fs.existsSync(full)) {
-    console.log("  ⚠️  Missing: " + relPath);
-    return;
-  }
-  let src = fs.readFileSync(full, "utf8");
-  let changed = 0;
-  for (const [find, replace] of edits) {
-    if (!src.includes(find)) continue;
-    src = src.replace(find, replace);
-    changed++;
-  }
-  if (changed) {
-    fs.writeFileSync(full, src, "utf8");
-    console.log("  🔧 Patched: " + relPath + ` (${changed})`);
-  }
-};
-
-console.log("\n🎨 Creating SYT creative icon (ShareYourTravel)...\n");
+console.log("\n🚗 Redesigning SYT icon with car...\n");
 
 // ============================================================
-// 1. Favicon SVG (with SYT monogram)
+// Master SVG — used by favicon, manifest, and <Logo />
+// Design: rounded navy square, top-down car silhouette inside a
+// teal circle (like a map pin), route line below with SYT text.
 // ============================================================
-const SYT_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+const SYT_CAR_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
   <defs>
     <linearGradient id="sytBg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#0B2B4F"/>
@@ -55,65 +39,85 @@ const SYT_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fil
       <stop offset="0%" stop-color="#00C6E6"/>
       <stop offset="100%" stop-color="#00A3C4"/>
     </linearGradient>
+    <radialGradient id="sytGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00C6E6" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#00C6E6" stop-opacity="0"/>
+    </radialGradient>
   </defs>
 
+  <!-- Background -->
   <rect width="64" height="64" rx="16" fill="url(#sytBg)"/>
 
-  <path d="M8 42 Q22 24 36 34 Q50 44 56 30"
+  <!-- Ambient glow behind the car -->
+  <circle cx="32" cy="26" r="22" fill="url(#sytGlow)"/>
+
+  <!-- Route line under the car -->
+  <path d="M10 56 Q24 48 40 54 Q54 58 58 52"
         stroke="url(#sytMark)"
-        stroke-width="2.5"
+        stroke-width="1.6"
         fill="none"
         stroke-linecap="round"
-        stroke-dasharray="3 3"
-        opacity="0.55"/>
+        stroke-dasharray="2.5 3"
+        opacity="0.6"/>
 
-  <circle cx="10" cy="44" r="3" fill="#10B981"/>
-  <circle cx="54" cy="28" r="3" fill="#F43F5E"/>
+  <!-- Green start pin (left of route) -->
+  <circle cx="10" cy="56" r="2.2" fill="#10B981"/>
+  <!-- Red end pin (right of route) -->
+  <circle cx="58" cy="52" r="2.2" fill="#F43F5E"/>
 
-  <text x="32" y="40" text-anchor="middle"
-        font-family="Inter, Segoe UI, Roboto, system-ui, sans-serif"
-        font-size="20" font-weight="800" letter-spacing="-0.5"
-        fill="url(#sytMark)">SYT</text>
+  <!-- Top-down car silhouette, centered -->
+  <g transform="translate(32, 26)">
+    <!-- Car body -->
+    <path d="M -14,0
+             Q -14,-7 -9,-9
+             L -6,-9
+             Q -4,-14 0,-14
+             Q 4,-14 6,-9
+             L 9,-9
+             Q 14,-7 14,0
+             L 14,6
+             Q 14,9 11,9
+             L -11,9
+             Q -14,9 -14,6 Z"
+          fill="url(#sytMark)"/>
+
+    <!-- Windshield -->
+    <path d="M -6,-4 Q -3,-8 0,-8 Q 3,-8 6,-4 Z" fill="#0B2B4F" opacity="0.55"/>
+
+    <!-- Rear window -->
+    <rect x="-6" y="4" width="12" height="3" rx="1.2" fill="#0B2B4F" opacity="0.55"/>
+
+    <!-- Side windows -->
+    <rect x="-11" y="-4" width="3" height="5" rx="1" fill="#0B2B4F" opacity="0.45"/>
+    <rect x="8" y="-4" width="3" height="5" rx="1" fill="#0B2B4F" opacity="0.45"/>
+
+    <!-- Headlights -->
+    <circle cx="-9" cy="-8" r="1.4" fill="#FDE68A"/>
+    <circle cx="9" cy="-8" r="1.4" fill="#FDE68A"/>
+
+    <!-- Taillights -->
+    <circle cx="-9" cy="8" r="1.2" fill="#F43F5E" opacity="0.85"/>
+    <circle cx="9" cy="8" r="1.2" fill="#F43F5E" opacity="0.85"/>
+  </g>
+
+  <!-- SYT monogram, top-left badge -->
+  <g transform="translate(6, 5)">
+    <rect width="18" height="12" rx="3" fill="#00A3C4"/>
+    <text x="9" y="9" text-anchor="middle"
+          font-family="Inter, Segoe UI, Roboto, system-ui, sans-serif"
+          font-size="7" font-weight="800" letter-spacing="-0.2"
+          fill="#FFFFFF">SYT</text>
+  </g>
 </svg>`;
 
-write("public/favicon.svg", SYT_SVG);
-write("public/icon.svg", SYT_SVG);
+// ============================================================
+// 1. Write favicon.svg + icon.svg
+// ============================================================
+write("public/favicon.svg", SYT_CAR_SVG);
+write("public/icon.svg", SYT_CAR_SVG);
 
 // ============================================================
-// 2. index.html — favicon + apple-touch + manifest link
-// ============================================================
-let htmlSrc = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
-
-htmlSrc = htmlSrc.replace(
-  /<link rel="icon"[^>]*>/,
-  '<link rel="icon" type="image/svg+xml" href="/favicon.svg" />'
-);
-
-if (!htmlSrc.includes("apple-touch-icon")) {
-  htmlSrc = htmlSrc.replace(
-    /<link rel="icon"[^>]*>/,
-    '<link rel="icon" type="image/svg+xml" href="/favicon.svg" />\n    <link rel="apple-touch-icon" href="/favicon.svg" />'
-  );
-}
-
-if (!htmlSrc.includes('rel="manifest"')) {
-  htmlSrc = htmlSrc.replace(
-    /<\/head>/,
-    '  <link rel="manifest" href="/manifest.json" />\n  </head>'
-  );
-}
-
-// Update <title> to ShareYourTravel
-htmlSrc = htmlSrc.replace(
-  /<title>[^<]*<\/title>/,
-  "<title>ShareYourTravel · Vehicle Pooling Platform</title>"
-);
-
-fs.writeFileSync(path.join(ROOT, "index.html"), htmlSrc, "utf8");
-console.log("  🔧 Patched: index.html");
-
-// ============================================================
-// 3. manifest.json — SYT + ShareYourTravel
+// 2. Manifest (unchanged name/theme, new icon already referenced)
 // ============================================================
 write("public/manifest.json", JSON.stringify({
   name: "ShareYourTravel",
@@ -130,11 +134,11 @@ write("public/manifest.json", JSON.stringify({
 }, null, 2));
 
 // ============================================================
-// 4. Reusable <Logo /> component (SYT)
+// 3. Replace the reusable <Logo /> component with the car version
 // ============================================================
 write("src/components/Logo.jsx", `
-// Brand logo — SYT monogram inside a rounded square, with the
-// route-line motif shared across the app.
+// Brand logo — top-down car silhouette with SYT badge.
+// Used in the navbar, auth pages, and anywhere brand is shown.
 
 export default function Logo({ size = 32, className = "" }) {
   return (
@@ -155,129 +159,110 @@ export default function Logo({ size = 32, className = "" }) {
           <stop offset="0%" stopColor="#00C6E6" />
           <stop offset="100%" stopColor="#00A3C4" />
         </linearGradient>
+        <radialGradient id="logoGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#00C6E6" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#00C6E6" stopOpacity="0" />
+        </radialGradient>
       </defs>
 
+      {/* Background */}
       <rect width="64" height="64" rx="16" fill="url(#logoBg)" />
 
+      {/* Ambient glow behind the car */}
+      <circle cx="32" cy="26" r="22" fill="url(#logoGlow)" />
+
+      {/* Route line under the car */}
       <path
-        d="M8 42 Q22 24 36 34 Q50 44 56 30"
+        d="M10 56 Q24 48 40 54 Q54 58 58 52"
         stroke="url(#logoMark)"
-        strokeWidth="2.5"
+        strokeWidth="1.6"
         fill="none"
         strokeLinecap="round"
-        strokeDasharray="3 3"
-        opacity="0.55"
+        strokeDasharray="2.5 3"
+        opacity="0.6"
       />
-      <circle cx="10" cy="44" r="3" fill="#10B981" />
-      <circle cx="54" cy="28" r="3" fill="#F43F5E" />
+      <circle cx="10" cy="56" r="2.2" fill="#10B981" />
+      <circle cx="58" cy="52" r="2.2" fill="#F43F5E" />
 
-      <text
-        x="32"
-        y="40"
-        textAnchor="middle"
-        fontFamily="Inter, Segoe UI, Roboto, system-ui, sans-serif"
-        fontSize="20"
-        fontWeight="800"
-        letterSpacing="-0.5"
-        fill="url(#logoMark)"
-      >
-        SYT
-      </text>
+      {/* Top-down car */}
+      <g transform="translate(32, 26)">
+        <path
+          d="M -14,0
+             Q -14,-7 -9,-9
+             L -6,-9
+             Q -4,-14 0,-14
+             Q 4,-14 6,-9
+             L 9,-9
+             Q 14,-7 14,0
+             L 14,6
+             Q 14,9 11,9
+             L -11,9
+             Q -14,9 -14,6 Z"
+          fill="url(#logoMark)"
+        />
+        <path d="M -6,-4 Q -3,-8 0,-8 Q 3,-8 6,-4 Z" fill="#0B2B4F" opacity="0.55" />
+        <rect x="-6" y="4" width="12" height="3" rx="1.2" fill="#0B2B4F" opacity="0.55" />
+        <rect x="-11" y="-4" width="3" height="5" rx="1" fill="#0B2B4F" opacity="0.45" />
+        <rect x="8" y="-4" width="3" height="5" rx="1" fill="#0B2B4F" opacity="0.45" />
+        <circle cx="-9" cy="-8" r="1.4" fill="#FDE68A" />
+        <circle cx="9" cy="-8" r="1.4" fill="#FDE68A" />
+        <circle cx="-9" cy="8" r="1.2" fill="#F43F5E" opacity="0.85" />
+        <circle cx="9" cy="8" r="1.2" fill="#F43F5E" opacity="0.85" />
+      </g>
+
+      {/* SYT badge */}
+      <g transform="translate(6, 5)">
+        <rect width="18" height="12" rx="3" fill="#00A3C4" />
+        <text
+          x="9"
+          y="9"
+          textAnchor="middle"
+          fontFamily="Inter, Segoe UI, Roboto, system-ui, sans-serif"
+          fontSize="7"
+          fontWeight="800"
+          letterSpacing="-0.2"
+          fill="#FFFFFF"
+        >
+          SYT
+        </text>
+      </g>
     </svg>
   );
 }
 `);
 
 // ============================================================
-// 5. Navbar.jsx — replace old V square with <Logo />
+// 4. Touch up index.html to be safe (favicon link + apple touch)
 // ============================================================
-let navSrc = fs.readFileSync(path.join(ROOT, "src/components/Navbar.jsx"), "utf8");
+let htmlSrc = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
 
-if (!navSrc.includes('import Logo')) {
-  navSrc = navSrc.replace(
-    /import NotificationBell from "\.\/NotificationBell\.jsx";/,
-    'import NotificationBell from "./NotificationBell.jsx";\nimport Logo from "./Logo.jsx";'
+if (!htmlSrc.includes('href="/favicon.svg"')) {
+  htmlSrc = htmlSrc.replace(
+    /<link rel="icon"[^>]*>/,
+    '<link rel="icon" type="image/svg+xml" href="/favicon.svg" />'
   );
 }
-
-// Any of the previous V squares
-navSrc = navSrc.replace(
-  /<span className="w-8 h-8 rounded-lg bg-accent text-white flex items-center justify-center">[\s\S]*?<\/span>/,
-  '<Logo size={32} />'
-);
-navSrc = navSrc.replace(
-  /<span className="w-8 h-8 rounded-lg bg-white\/15 flex items-center justify-center">\s*V\s*<\/span>/,
-  '<Logo size={32} />'
-);
-navSrc = navSrc.replace(
-  /<span className="w-9 h-9 rounded-xl bg-white\/15 backdrop-blur flex items-center justify-center shadow-inner">\s*V\s*<\/span>/,
-  '<Logo size={36} />'
-);
-
-// Rename any "Share Your Vehicle" text to "ShareYourTravel" in navbar
-navSrc = navSrc.replace(/Share Your Vehicle/g, "ShareYourTravel");
-
-fs.writeFileSync(path.join(ROOT, "src/components/Navbar.jsx"), navSrc, "utf8");
-console.log("  🔧 Patched: Navbar.jsx");
-
-// ============================================================
-// 6. Login.jsx — Logo + rename
-// ============================================================
-let loginSrc = fs.readFileSync(path.join(ROOT, "src/pages/Login.jsx"), "utf8");
-
-if (!loginSrc.includes('import Logo')) {
-  loginSrc = loginSrc.replace(
-    /import { useAuth } from "\.\.\/context\/AuthContext\.jsx";/,
-    'import { useAuth } from "../context/AuthContext.jsx";\nimport Logo from "../components/Logo.jsx";'
+if (!htmlSrc.includes("apple-touch-icon")) {
+  htmlSrc = htmlSrc.replace(
+    /<link rel="icon"[^>]*>/,
+    '<link rel="icon" type="image/svg+xml" href="/favicon.svg" />\n    <link rel="apple-touch-icon" href="/favicon.svg" />'
   );
 }
+fs.writeFileSync(path.join(ROOT, "index.html"), htmlSrc, "utf8");
+console.log("  🔧 Patched: index.html");
 
-loginSrc = loginSrc.replace(
-  /<span className="w-9 h-9 rounded-xl bg-white\/15 backdrop-blur flex items-center justify-center shadow-inner">\s*V\s*<\/span>/,
-  '<Logo size={36} />'
-);
-loginSrc = loginSrc.replace(
-  /<span className="w-8 h-8 rounded-lg bg-white\/15 flex items-center justify-center">\s*V\s*<\/span>/,
-  '<Logo size={32} />'
-);
-loginSrc = loginSrc.replace(/Share Your Vehicle/g, "ShareYourTravel");
-
-fs.writeFileSync(path.join(ROOT, "src/pages/Login.jsx"), loginSrc, "utf8");
-console.log("  🔧 Patched: Login.jsx");
-
-// ============================================================
-// 7. Register.jsx — Logo + rename
-// ============================================================
-let regSrc = fs.readFileSync(path.join(ROOT, "src/pages/Register.jsx"), "utf8");
-
-if (!regSrc.includes('import Logo')) {
-  regSrc = regSrc.replace(
-    /import { useAuth } from "\.\.\/context\/AuthContext\.jsx";/,
-    'import { useAuth } from "../context/AuthContext.jsx";\nimport Logo from "../components/Logo.jsx";'
-  );
-}
-
-regSrc = regSrc.replace(
-  /<span className="w-9 h-9 rounded-xl bg-white\/15 backdrop-blur flex items-center justify-center">\s*V\s*<\/span>/,
-  '<Logo size={36} />'
-);
-regSrc = regSrc.replace(
-  /<span className="w-8 h-8 rounded-lg bg-white\/15 flex items-center justify-center">\s*V\s*<\/span>/,
-  '<Logo size={32} />'
-);
-regSrc = regSrc.replace(
-  /<span className="w-12 h-12 rounded-xl bg-accent text-white flex items-center justify-center text-xl font-bold mb-3">V<\/span>/,
-  '<div className="mb-3"><Logo size={48} /></div>'
-);
-regSrc = regSrc.replace(/Share Your Vehicle/g, "ShareYourTravel");
-
-fs.writeFileSync(path.join(ROOT, "src/pages/Register.jsx"), regSrc, "utf8");
-console.log("  🔧 Patched: Register.jsx");
-
-console.log("\n✅ SYT creative icon applied!\n");
+console.log("\n✅ SYT car icon applied!\n");
+console.log("What changed:");
+console.log("  • public/favicon.svg — car + route + SYT badge");
+console.log("  • public/icon.svg — same SVG for manifest");
+console.log("  • src/components/Logo.jsx — car version");
+console.log("  • index.html — favicon + apple-touch-icon");
+console.log("");
 console.log("Next steps:");
 console.log("  git add .");
-console.log('  git commit -m "SYT creative icon + rename to ShareYourTravel"');
+console.log('  git commit -m "SYT icon: stylized car design"');
 console.log("  git push\n");
 console.log("  Then hard refresh (Ctrl + Shift + R) in the browser.");
-console.log("  Close and reopen the tab to refresh the favicon cache.\n");
+console.log("  Favicons cache hard — close the tab and reopen it.");
+console.log("  Also reinstall the PWA (uninstall old, install new) to");
+console.log("  see the new icon on your Start Menu.\n");
