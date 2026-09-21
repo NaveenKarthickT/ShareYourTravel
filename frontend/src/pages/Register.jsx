@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { User, Mail, Phone, Lock, UserPlus, ShieldCheck, RefreshCw, Car, Users2, MapPinned } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
+import Logo from "../components/Logo.jsx";
 import { useToast } from "../components/Toast.jsx";
 
 const validateEmail = (v) => /^\S+@\S+\.\S+$/.test(v);
@@ -15,9 +16,7 @@ function BrandPanel() {
       <div className="absolute -bottom-24 -right-24 w-72 h-72 rounded-full bg-primary/30 blur-3xl pointer-events-none" />
 
       <div className="relative flex items-center gap-2 font-bold text-lg">
-        <span className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center">
-          V
-        </span>
+        <Logo size={36} />
         Share Your Vehicle
       </div>
 

@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Shield, Globe, Command } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import NotificationBell from "./NotificationBell.jsx";
+import Logo from "./Logo.jsx";
 import Avatar from "./Avatar.jsx";
 import ThemeToggle from "./ThemeToggle.jsx";
 
@@ -35,9 +36,7 @@ export default function Navbar() {
             <ArrowLeft className="w-4 h-4" />
           </button>
           <Link to="/" className="flex items-center gap-2 font-bold text-lg">
-            <span className="w-8 h-8 rounded-lg bg-accent text-white flex items-center justify-center">
-              <Globe className="w-4 h-4" />
-            </span>
+            <Logo size={32} />
             <span className="hidden sm:inline">ShareYourVehicle</span>
           </Link>
         </div>

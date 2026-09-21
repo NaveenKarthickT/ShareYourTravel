@@ -1,7 +1,12 @@
 // ============================================================
-// Rewrite PostVehicle.jsx — clean, working version
+// SYV Creative Icon Patch
+// 1. Creates /public/favicon.svg (inline SVG with SYV monogram)
+// 2. Updates index.html — favicon + apple-touch-icon + PWA manifest
+// 3. Updates public/manifest.json — new icon + name
+// 4. Adds a reusable <Logo /> component for the navbar/brand panels
+// 5. Swaps the old "V" placeholders with <Logo /> in Navbar, Login, Register
 // Run from carpool-platform root:
-//   node rewrite-postvehicle.js
+//   node syv-icon-patch.js
 // ============================================================
 
 const fs = require("fs");
@@ -20,330 +25,267 @@ const write = (relPath, content) => {
   console.log("  ✏️  " + path.relative(process.cwd(), full));
 };
 
-console.log("\n🔧 Rewriting PostVehicle.jsx...\n");
-
-write("src/pages/PostVehicle.jsx", `
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Car, Hash, MapPin, Flag, Calendar, Clock, Users,
-  IndianRupee, FileText, Send,
-} from "lucide-react";
-import api from "../api/axios.js";
-import { useAuth } from "../context/AuthContext.jsx";
-import { useToast } from "../components/Toast.jsx";
-import Sidebar from "../components/Sidebar.jsx";
-import CityInput from "../components/CityInput.jsx";
-import PageHeader from "../components/PageHeader.jsx";
-
-const links = [
-  { to: "/dashboard", label: "Overview" },
-  { to: "/vehicles/search", label: "Search Vehicles" },
-  { to: "/vehicles/post", label: "Post a Vehicle", end: true },
-  { to: "/trips/confirmed", label: "Confirmed Trips" },
-  { to: "/trips/ongoing", label: "Ongoing Trip" },
-  { to: "/trips/requests", label: "My Requests" },
-  { to: "/trips/completed", label: "Completed Trips" },
-];
-
-export default function PostVehicle() {
-  const { activeOrg } = useAuth();
-  const navigate = useNavigate();
-  const showToast = useToast();
-
-  const [form, setForm] = useState({
-    vehicleType: "car",
-    vehicleModel: "",
-    vehicleNumber: "",
-    startLocation: "",
-    destination: "",
-    travelDate: "",
-    travelTime: "",
-    totalSeats: 3,
-    farePerSeat: 0,
-    notes: "",
-  });
-  const [touched, setTouched] = useState({});
-  const [loading, setLoading] = useState(false);
-
-  const errors = {
-    startLocation: touched.startLocation && !form.startLocation.trim(),
-    destination: touched.destination && !form.destination.trim(),
-    travelDate: touched.travelDate && !form.travelDate,
-    travelTime: touched.travelTime && !form.travelTime,
-    totalSeats: touched.totalSeats && (!form.totalSeats || form.totalSeats < 1),
-  };
-
-  const canSubmit =
-    form.startLocation.trim() &&
-    form.destination.trim() &&
-    form.travelDate &&
-    form.travelTime &&
-    form.totalSeats >= 1 &&
-    !loading;
-
-  const field = (key) => ({
-    value: form[key],
-    onChange: (e) => setForm({ ...form, [key]: e.target.value }),
-    onBlur: () => setTouched((t) => ({ ...t, [key]: true })),
-  });
-
-  const inputClass = (key) =>
-    "w-full border rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 transition " +
-    (errors[key]
-      ? "border-rose-400 focus:ring-rose-200"
-      : "border-slate-300 dark:border-slate-600 dark:bg-slate-900 focus:ring-accent");
-
-  const submit = async (e) => {
-    e.preventDefault();
-    setTouched({
-      startLocation: true,
-      destination: true,
-      travelDate: true,
-      travelTime: true,
-      totalSeats: true,
-    });
-
-    if (!activeOrg?.org?._id) {
-      showToast("Please pick a community first", "error");
-      return;
+const patch = (relPath, edits) => {
+  const full = path.join(ROOT, relPath);
+  if (!fs.existsSync(full)) {
+    console.log("  ⚠️  Missing: " + path.relative(process.cwd(), full));
+    return;
+  }
+  let src = fs.readFileSync(full, "utf8");
+  let changed = 0;
+  for (const [find, replace] of edits) {
+    if (!src.includes(find)) {
+      console.log("  ⚠️  Pattern not found in " + relPath);
+      continue;
     }
-    if (!canSubmit) {
-      showToast("Please fill in all required fields", "error");
-      return;
-    }
+    src = src.replace(find, replace);
+    changed++;
+  }
+  if (changed) {
+    fs.writeFileSync(full, src, "utf8");
+    console.log("  🔧 Patched: " + relPath + ` (${changed})`);
+  }
+};
 
-    try {
-      setLoading(true);
-      await api.post("/vehicles", { ...form, organization: activeOrg.org._id });
-      showToast("Trip posted successfully");
-      navigate("/vehicles/search");
-    } catch (err) {
-      showToast(err.response?.data?.message || "Could not post trip", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
+console.log("\n🎨 Creating SYV creative icon...\n");
 
+// ============================================================
+// 1. SVG source (used for favicon, logo component, and PNG base)
+// ============================================================
+const SYV_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="syvBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0B2B4F"/>
+      <stop offset="100%" stop-color="#1D4A7A"/>
+    </linearGradient>
+    <linearGradient id="syvMark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#00C6E6"/>
+      <stop offset="100%" stop-color="#00A3C4"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="64" height="64" rx="16" fill="url(#syvBg)"/>
+
+  <path d="M8 42 Q22 24 36 34 Q50 44 56 30" stroke="url(#syvMark)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-dasharray="3 3" opacity="0.55"/>
+
+  <circle cx="10" cy="44" r="3" fill="#10B981"/>
+  <circle cx="54" cy="28" r="3" fill="#F43F5E"/>
+
+  <text x="32" y="40" text-anchor="middle" font-family="Inter, Segoe UI, Roboto, system-ui, sans-serif" font-size="20" font-weight="800" letter-spacing="-0.5" fill="url(#syvMark)">
+    SYV
+  </text>
+</svg>`;
+
+// ============================================================
+// 2. Write public/favicon.svg
+// ============================================================
+write("public/favicon.svg", SYV_SVG);
+
+// ============================================================
+// 3. Write public/icon.svg (used by manifest, same SVG)
+// ============================================================
+write("public/icon.svg", SYV_SVG);
+
+// ============================================================
+// 4. Update index.html — favicon + apple touch + theme color
+// ============================================================
+let htmlSrc = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+
+// Replace favicon link
+htmlSrc = htmlSrc.replace(
+  /<link rel="icon"[^>]*>/,
+  '<link rel="icon" type="image/svg+xml" href="/favicon.svg" />'
+);
+
+// Add apple-touch-icon if not present
+if (!htmlSrc.includes('apple-touch-icon')) {
+  htmlSrc = htmlSrc.replace(
+    /<link rel="icon"[^>]*>/,
+    '<link rel="icon" type="image/svg+xml" href="/favicon.svg" />\n    <link rel="apple-touch-icon" href="/favicon.svg" />'
+  );
+}
+
+// Ensure manifest link exists
+if (!htmlSrc.includes('rel="manifest"')) {
+  htmlSrc = htmlSrc.replace(
+    /<\/head>/,
+    '  <link rel="manifest" href="/manifest.json" />\n  </head>'
+  );
+}
+
+fs.writeFileSync(path.join(ROOT, "index.html"), htmlSrc, "utf8");
+console.log("  🔧 Patched: index.html");
+
+// ============================================================
+// 5. Update public/manifest.json — icon + name
+// ============================================================
+write("public/manifest.json", JSON.stringify({
+  name: "Share Your Vehicle",
+  short_name: "SYV",
+  description: "Community-based vehicle pooling platform",
+  start_url: "/",
+  display: "standalone",
+  background_color: "#0B2B4F",
+  theme_color: "#00A3C4",
+  orientation: "portrait-primary",
+  icons: [
+    { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any maskable" }
+  ]
+}, null, 2));
+
+// ============================================================
+// 6. Create reusable <Logo /> component
+// ============================================================
+write("src/components/Logo.jsx", `
+// Brand logo — SYV monogram inside a rounded square, with the
+// route-line motif shared across the app.
+
+export default function Logo({ size = 32, className = "" }) {
   return (
-    <div className="flex">
-      <Sidebar links={links} />
-      <div className="flex-1 px-6 py-8 max-w-2xl">
-        <PageHeader
-          icon={Car}
-          eyebrow="New trip"
-          title="Post a vehicle for pooling"
-          subtitle={
-            "Share your trip so others in " +
-            (activeOrg?.org?.name || "your community") +
-            " can join."
-          }
-        />
+    <svg
+      viewBox="0 0 64 64"
+      width={size}
+      height={size}
+      className={"shrink-0 " + className}
+      xmlns="http://www.w3.org/2000/svg"
+      aria-label="Share Your Vehicle"
+    >
+      <defs>
+        <linearGradient id="logoBg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#0B2B4F" />
+          <stop offset="100%" stopColor="#1D4A7A" />
+        </linearGradient>
+        <linearGradient id="logoMark" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#00C6E6" />
+          <stop offset="100%" stopColor="#00A3C4" />
+        </linearGradient>
+      </defs>
 
-        <form
-          onSubmit={submit}
-          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 space-y-4"
-          noValidate
-        >
-          {/* Vehicle type + model */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
-                Vehicle type
-              </label>
-              <div className="relative">
-                <Car className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                <select {...field("vehicleType")} className={inputClass("vehicleType")}>
-                  <option value="car">Car</option>
-                  <option value="bike">Bike</option>
-                  <option value="van">Van</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
-                Vehicle model
-              </label>
-              <div className="relative">
-                <Car className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  {...field("vehicleModel")}
-                  className={inputClass("vehicleModel")}
-                  placeholder="e.g. Honda City"
-                />
-              </div>
-            </div>
-          </div>
+      <rect width="64" height="64" rx="16" fill="url(#logoBg)" />
 
-          {/* Vehicle number */}
-          <div>
-            <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
-              Vehicle number
-            </label>
-            <div className="relative">
-              <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                {...field("vehicleNumber")}
-                onChange={(e) =>
-                  setForm({ ...form, vehicleNumber: e.target.value.toUpperCase() })
-                }
-                className={inputClass("vehicleNumber")}
-                placeholder="e.g. TN 59 AB 1234"
-              />
-            </div>
-          </div>
+      {/* Dotted route line — start and end pins */}
+      <path
+        d="M8 42 Q22 24 36 34 Q50 44 56 30"
+        stroke="url(#logoMark)"
+        strokeWidth="2.5"
+        fill="none"
+        strokeLinecap="round"
+        strokeDasharray="3 3"
+        opacity="0.55"
+      />
+      <circle cx="10" cy="44" r="3" fill="#10B981" />
+      <circle cx="54" cy="28" r="3" fill="#F43F5E" />
 
-          {/* From / To */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
-                From *
-              </label>
-              <CityInput
-                value={form.startLocation}
-                onChange={(v) => {
-                  setForm({ ...form, startLocation: v });
-                  setTouched((t) => ({ ...t, startLocation: true }));
-                }}
-                onSelect={(v) =>
-                  setForm({ ...form, startLocation: v })
-                }
-                placeholder="Search city or area"
-                icon={MapPin}
-              />
-              {errors.startLocation && (
-                <p className="text-xs text-rose-600 mt-1">Required</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
-                To *
-              </label>
-              <CityInput
-                value={form.destination}
-                onChange={(v) => {
-                  setForm({ ...form, destination: v });
-                  setTouched((t) => ({ ...t, destination: true }));
-                }}
-                onSelect={(v) =>
-                  setForm({ ...form, destination: v })
-                }
-                placeholder="Search city or area"
-                icon={Flag}
-              />
-              {errors.destination && (
-                <p className="text-xs text-rose-600 mt-1">Required</p>
-              )}
-            </div>
-          </div>
-
-          {/* Date / Time */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
-                Date *
-              </label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                <input
-                  type="date"
-                  {...field("travelDate")}
-                  className={inputClass("travelDate")}
-                />
-              </div>
-              {errors.travelDate && (
-                <p className="text-xs text-rose-600 mt-1">Required</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
-                Time *
-              </label>
-              <div className="relative">
-                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                <input
-                  type="time"
-                  {...field("travelTime")}
-                  className={inputClass("travelTime")}
-                />
-              </div>
-              {errors.travelTime && (
-                <p className="text-xs text-rose-600 mt-1">Required</p>
-              )}
-            </div>
-          </div>
-
-          {/* Seats / Fare */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
-                Available seats
-              </label>
-              <div className="relative">
-                <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="number"
-                  min={1}
-                  {...field("totalSeats")}
-                  onChange={(e) =>
-                    setForm({ ...form, totalSeats: Number(e.target.value) })
-                  }
-                  className={inputClass("totalSeats")}
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
-                Fare per seat (₹)
-              </label>
-              <div className="relative">
-                <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="number"
-                  min={0}
-                  {...field("farePerSeat")}
-                  onChange={(e) =>
-                    setForm({ ...form, farePerSeat: Number(e.target.value) })
-                  }
-                  className={inputClass("farePerSeat")}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div>
-            <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
-              Notes (optional)
-            </label>
-            <div className="relative">
-              <FileText className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-              <textarea
-                {...field("notes")}
-                className={inputClass("notes")}
-                rows={2}
-              />
-            </div>
-          </div>
-
-          <button
-            disabled={!canSubmit}
-            className="w-full flex items-center justify-center gap-2 bg-accent text-white rounded-md py-2.5 font-semibold hover:bg-[#008fad] disabled:opacity-60 disabled:cursor-not-allowed transition"
-          >
-            <Send className="w-4 h-4" />
-            {loading ? "Posting..." : "Post this trip"}
-          </button>
-        </form>
-      </div>
-    </div>
+      {/* SYV monogram */}
+      <text
+        x="32"
+        y="40"
+        textAnchor="middle"
+        fontFamily="Inter, Segoe UI, Roboto, system-ui, sans-serif"
+        fontSize="20"
+        fontWeight="800"
+        letterSpacing="-0.5"
+        fill="url(#logoMark)"
+      >
+        SYV
+      </text>
+    </svg>
   );
 }
 `);
 
-console.log("\n✅ PostVehicle.jsx rewritten.\n");
+// ============================================================
+// 7. Patch Navbar.jsx — replace old inline brand icon with <Logo />
+// ============================================================
+let navSrc = fs.readFileSync(path.join(ROOT, "src/components/Navbar.jsx"), "utf8");
+
+if (!navSrc.includes('import Logo')) {
+  navSrc = navSrc.replace(
+    /import NotificationBell from "\.\/NotificationBell\.jsx";/,
+    'import NotificationBell from "./NotificationBell.jsx";\nimport Logo from "./Logo.jsx";'
+  );
+}
+
+// Replace the old brand icon block
+navSrc = navSrc.replace(
+  /<span className="w-8 h-8 rounded-lg bg-accent text-white flex items-center justify-center">[\s\S]*?<\/span>/,
+  '<Logo size={32} />'
+);
+
+fs.writeFileSync(path.join(ROOT, "src/components/Navbar.jsx"), navSrc, "utf8");
+console.log("  🔧 Patched: Navbar.jsx");
+
+// ============================================================
+// 8. Patch Login.jsx brand panel — replace plain "V" square
+// ============================================================
+let loginSrc = fs.readFileSync(path.join(ROOT, "src/pages/Login.jsx"), "utf8");
+
+if (!loginSrc.includes('import Logo')) {
+  loginSrc = loginSrc.replace(
+    /import { useAuth } from "\.\.\/context\/AuthContext\.jsx";/,
+    'import { useAuth } from "../context/AuthContext.jsx";\nimport Logo from "../components/Logo.jsx";'
+  );
+}
+
+// Replace the "V" square in the brand panel header
+loginSrc = loginSrc.replace(
+  /<span className="w-9 h-9 rounded-xl bg-white\/15 backdrop-blur flex items-center justify-center shadow-inner">\s*V\s*<\/span>/,
+  '<Logo size={36} />'
+);
+
+// Fallback: an older variant with "w-8 h-8"
+loginSrc = loginSrc.replace(
+  /<span className="w-8 h-8 rounded-lg bg-white\/15 flex items-center justify-center">\s*V\s*<\/span>/,
+  '<Logo size={32} />'
+);
+
+fs.writeFileSync(path.join(ROOT, "src/pages/Login.jsx"), loginSrc, "utf8");
+console.log("  🔧 Patched: Login.jsx");
+
+// ============================================================
+// 9. Patch Register.jsx brand panel
+// ============================================================
+let regSrc = fs.readFileSync(path.join(ROOT, "src/pages/Register.jsx"), "utf8");
+
+if (!regSrc.includes('import Logo')) {
+  regSrc = regSrc.replace(
+    /import { useAuth } from "\.\.\/context\/AuthContext\.jsx";/,
+    'import { useAuth } from "../context/AuthContext.jsx";\nimport Logo from "../components/Logo.jsx";'
+  );
+}
+
+// Replace "V" square in register brand panel
+regSrc = regSrc.replace(
+  /<span className="w-9 h-9 rounded-xl bg-white\/15 backdrop-blur flex items-center justify-center">\s*V\s*<\/span>/,
+  '<Logo size={36} />'
+);
+regSrc = regSrc.replace(
+  /<span className="w-8 h-8 rounded-lg bg-white\/15 flex items-center justify-center">\s*V\s*<\/span>/,
+  '<Logo size={32} />'
+);
+
+// Replace the "V" square in the register card header (the small icon above the title)
+regSrc = regSrc.replace(
+  /<span className="w-12 h-12 rounded-xl bg-accent text-white flex items-center justify-center text-xl font-bold mb-3">V<\/span>/,
+  '<div className="mb-3"><Logo size={48} /></div>'
+);
+
+fs.writeFileSync(path.join(ROOT, "src/pages/Register.jsx"), regSrc, "utf8");
+console.log("  🔧 Patched: Register.jsx");
+
+console.log("\n✅ SYV creative icon applied!\n");
+console.log("What changed:");
+console.log("  • public/favicon.svg — SYV monogram + route-line motif");
+console.log("  • public/icon.svg — same SVG, used by the manifest");
+console.log("  • public/manifest.json — updated name + new icon");
+console.log("  • index.html — favicon + apple-touch-icon + manifest link");
+console.log("  • src/components/Logo.jsx — reusable <Logo />");
+console.log("  • Navbar / Login / Register — old \"V\" squares now use <Logo />");
+console.log("");
 console.log("Next steps:");
 console.log("  git add .");
-console.log('  git commit -m "Fix PostVehicle.jsx missing imports"');
+console.log('  git commit -m "SYV creative icon + favicon + manifest"');
 console.log("  git push\n");
-console.log("  Then hard refresh (Ctrl + Shift + R) on your site.\n");
+console.log("  Then hard refresh (Ctrl + Shift + R) in the browser.");
+console.log("  You may also need to close and reopen the browser tab to");
+console.log("  refresh the favicon cache.\n");
