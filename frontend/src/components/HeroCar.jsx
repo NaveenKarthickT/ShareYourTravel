@@ -45,14 +45,6 @@ export default function HeroCar() {
           ))}
         </g>
 
-        {/* Passenger (walks to the door) */}
-        <g className="hero-passenger">
-          <circle cx="130" cy="105" r="9" fill="#0B2B4F" />
-          <rect x="122" y="116" width="16" height="24" rx="4" fill="#00A3C4" />
-          <rect x="124" y="140" width="5" height="16" rx="2" fill="#0B2B4F" />
-          <rect x="131" y="140" width="5" height="16" rx="2" fill="#0B2B4F" />
-        </g>
-
         {/* Car */}
         <g className="hero-car">
           <ellipse cx="320" cy="172" rx="120" ry="6" fill="#0B2B4F" opacity="0.12" />
@@ -90,6 +82,14 @@ export default function HeroCar() {
           <circle cx="235" cy="160" r="6" fill="#cbd5e1" className="hero-wheel-front" />
           <circle cx="410" cy="160" r="16" fill="#0F172A" />
           <circle cx="410" cy="160" r="6" fill="#cbd5e1" className="hero-wheel-back" />
+        </g>
+
+        {/* Passenger (walks to the door) */}
+        <g className="hero-passenger">
+          <circle cx="130" cy="105" r="9" fill="#0B2B4F" />
+          <rect x="122" y="116" width="16" height="24" rx="4" fill="#00A3C4" />
+          <rect x="124" y="140" width="5" height="16" rx="2" fill="#0B2B4F" />
+          <rect x="131" y="140" width="5" height="16" rx="2" fill="#0B2B4F" />
         </g>
 
         {/* Motion lines (appear when car drives) */}
@@ -130,14 +130,16 @@ export default function HeroCar() {
 
         /* Passenger: hops in, disappears, appears again next loop. */
         @keyframes hero-passenger-hop {
-          0%, 25%   { transform: translate(0, 0); opacity: 0; }
-          28%       { transform: translate(60px, -15px); opacity: 1; }
+          0%, 15%   { transform: translate(0, 0); opacity: 1; }
+          25%       { transform: translate(60px, -15px); opacity: 1; }
           45%       { transform: translate(155px, -12px); opacity: 1; }
-          52%       { transform: translate(175px, -15px) scale(0.7); opacity: 0; }
-          100%      { transform: translate(175px, -15px) scale(0.7); opacity: 0; }
+          55%       { transform: translate(170px, -10px) scale(0.88); opacity: 1; }
+          60%, 95%  { transform: translate(170px, -8px) scale(0.9); opacity: 1; }
+          100%      { transform: translate(170px, -8px) scale(0.9); opacity: 1; }
         }
         .hero-passenger {
           animation: hero-passenger-hop 6s ease-in-out infinite;
+          opacity: 1;
         }
 
         /* Wheels spin while the car is moving. */
