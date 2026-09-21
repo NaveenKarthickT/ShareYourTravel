@@ -7,6 +7,10 @@ import Vehicle from "./src/models/Vehicle.js";
 
 dotenv.config();
 
+const SUPERADMIN_EMAIL = process.env.SUPERADMIN_EMAIL || "naveenkarthickt@gmail.com";
+const SUPERADMIN_PASSWORD = process.env.SUPERADMIN_PASSWORD || "naveen@123";
+const SUPERADMIN_NAME = process.env.SUPERADMIN_NAME || "Naveen Karthick";
+
 const run = async () => {
   await mongoose.connect(process.env.MONGODB_URI);
   console.log("Connected to MongoDB");
@@ -17,41 +21,63 @@ const run = async () => {
   await Vehicle.deleteMany({});
   console.log("Cleared existing data\n");
 
+  // ---------- 1. SUPERADMIN (you) ----------
   await User.create({
-    name: "Site Owner", email: "super@velocity.com",
-    password: "super123", platformRole: "super_admin",
+    name: SUPERADMIN_NAME,
+    email: SUPERADMIN_EMAIL.toLowerCase(),
+    password: SUPERADMIN_PASSWORD,
+    platformRole: "super_admin",
   });
-  console.log("✓ Superadmin created");
+  console.log(`✓ Superadmin created: ${SUPERADMIN_EMAIL}`);
 
+  // ---------- 2. Demo Org 1 — Green Ride Co ----------
   const admin1 = await User.create({
-    name: "Alex Rivera", email: "admin@greenride.com",
-    password: "admin123", phone: "+91 90000 11111",
+    name: "Alex Rivera",
+    email: "admin@greenride.com",
+    password: "admin123",
+    phone: "+91 90000 11111",
   });
   const org1 = await Organization.create({
-    name: "Green Ride Co", slug: "green-ride-co", type: "corporate", size: "medium",
-    description: "Eco-friendly carpool community", location: "Bangalore",
+    name: "Green Ride Co",
+    slug: "green-ride-co",
+    type: "corporate",
+    size: "medium",
+    description: "Eco-friendly carpool community",
+    location: "Bangalore",
     createdBy: admin1._id,
   });
-  await Membership.create({ user: admin1._id, organization: org1._id, role: "org_admin", status: "approved", reviewedBy: admin1._id, reviewedAt: new Date() });
+  await Membership.create({
+    user: admin1._id, organization: org1._id, role: "org_admin", status: "approved",
+    reviewedBy: admin1._id, reviewedAt: new Date(),
+  });
 
   const user1 = await User.create({
     name: "Jamie Lee", email: "user@greenride.com",
     password: "user123", phone: "+91 90000 22222",
   });
-  await Membership.create({ user: user1._id, organization: org1._id, role: "member", status: "approved", reviewedBy: admin1._id, reviewedAt: new Date() });
-  console.log("✓ Green Ride Co created");
+  await Membership.create({
+    user: user1._id, organization: org1._id, role: "member", status: "approved",
+    reviewedBy: admin1._id, reviewedAt: new Date(),
+  });
+  console.log("✓ Green Ride Co created with 2 members");
 
+  // ---------- 3. Demo Org 2 — Metro Poolers ----------
   const admin2 = await User.create({
     name: "Priya Shah", email: "admin@metropool.com", password: "admin123",
   });
   const org2 = await Organization.create({
-    name: "Metro Poolers", slug: "metro-poolers", type: "residency", size: "large",
+    name: "Metro Poolers", slug: "metro-poolers",
+    type: "residency", size: "large",
     description: "City commuter pooling", location: "Mumbai",
     createdBy: admin2._id,
   });
-  await Membership.create({ user: admin2._id, organization: org2._id, role: "org_admin", status: "approved", reviewedBy: admin2._id, reviewedAt: new Date() });
-  console.log("✓ Metro Poolers created");
+  await Membership.create({
+    user: admin2._id, organization: org2._id, role: "org_admin", status: "approved",
+    reviewedBy: admin2._id, reviewedAt: new Date(),
+  });
+  console.log("✓ Metro Poolers created with 1 admin");
 
+  // ---------- 4. Demo vehicles ----------
   const tomorrow = new Date(Date.now() + 86400000);
   const dayAfter = new Date(Date.now() + 2 * 86400000);
 
@@ -72,10 +98,15 @@ const run = async () => {
   console.log("✓ 4 demo vehicles created");
 
   console.log("\n✅ Seed complete!\n");
-  console.log("  Superadmin:  super@velocity.com  /  super123");
-  console.log("  Org Admin 1: admin@greenride.com /  admin123");
-  console.log("  Org Admin 2: admin@metropool.com /  admin123");
-  console.log("  Normal user: user@greenride.com  /  user123\n");
+  console.log("Your super admin login:");
+  console.log(`  Email:    ${SUPERADMIN_EMAIL}`);
+  console.log(`  Password: ${SUPERADMIN_PASSWORD}`);
+  console.log("");
+  console.log("Demo org accounts (for testing):");
+  console.log("  Admin 1: admin@greenride.com / admin123");
+  console.log("  Admin 2: admin@metropool.com / admin123");
+  console.log("  User:    user@greenride.com  / user123");
+  console.log("");
 
   await mongoose.disconnect();
   process.exit(0);

@@ -79,3 +79,62 @@ export const setUserPlatformRole = asyncHandler(async (req, res) => {
   if (!user) { res.status(404); throw new Error("User not found"); }
   res.json({ success: true, data: user });
 });
+
+
+// ------------- Super Admin: full org details -------------
+
+// @route GET /api/admin/platform/orgs/:orgId/details
+export const platformOrgDetails = asyncHandler(async (req, res) => {
+  const { orgId } = req.params;
+  const [org, memberships, vehicles, bookings] = await Promise.all([
+    Organization.findById(orgId).populate("createdBy", "name email"),
+    Membership.find({ organization: orgId }).populate("user", "name email phone platformRole"),
+    Vehicle.find({ organization: orgId }).populate("postedBy", "name email"),
+    Booking.find({ organization: orgId })
+      .populate("passenger", "name email")
+      .populate("vehicle", "startLocation destination"),
+  ]);
+  if (!org) { res.status(404); throw new Error("Organization not found"); }
+
+  res.json({
+    success: true,
+    data: { org, memberships, vehicles, bookings },
+  });
+});
+
+// @route DELETE /api/admin/platform/orgs/:orgId
+export const platformDeleteOrg = asyncHandler(async (req, res) => {
+  const { orgId } = req.params;
+  const org = await Organization.findById(orgId);
+  if (!org) { res.status(404); throw new Error("Organization not found"); }
+
+  await Promise.all([
+    Organization.findByIdAndDelete(orgId),
+    Membership.deleteMany({ organization: orgId }),
+    Vehicle.deleteMany({ organization: orgId }),
+    Booking.deleteMany({ organization: orgId }),
+  ]);
+
+  res.json({ success: true, data: { message: "Organization deleted", orgId } });
+});
+
+// @route POST /api/admin/platform/orgs/:orgId/make-admin/:userId
+export const platformPromoteToOrgAdmin = asyncHandler(async (req, res) => {
+  const { orgId, userId } = req.params;
+  const membership = await Membership.findOne({ user: userId, organization: orgId });
+  if (!membership) { res.status(404); throw new Error("Membership not found"); }
+  membership.role = "org_admin";
+  membership.status = "approved";
+  membership.reviewedBy = req.user._id;
+  membership.reviewedAt = new Date();
+  await membership.save();
+  res.json({ success: true, data: membership });
+});
+
+// @route DELETE /api/admin/platform/orgs/:orgId/members/:userId
+export const platformRemoveMember = asyncHandler(async (req, res) => {
+  const { orgId, userId } = req.params;
+  const result = await Membership.findOneAndDelete({ user: userId, organization: orgId });
+  if (!result) { res.status(404); throw new Error("Membership not found"); }
+  res.json({ success: true, data: { message: "Member removed" } });
+});

@@ -7,9 +7,10 @@ dotenv.config();
 
 const run = async () => {
   await connectDB();
-  const email = process.env.SUPERADMIN_EMAIL;
-  const password = process.env.SUPERADMIN_PASSWORD;
-  const name = process.env.SUPERADMIN_NAME || "Super Admin";
+  const email = (process.env.SUPERADMIN_EMAIL || "naveenkarthickt@gmail.com").toLowerCase();
+  const password = process.env.SUPERADMIN_PASSWORD || "naveen@123";
+  const name = process.env.SUPERADMIN_NAME || "Naveen Karthick";
+
   let user = await User.findOne({ email });
   if (user) {
     user.platformRole = "super_admin";
