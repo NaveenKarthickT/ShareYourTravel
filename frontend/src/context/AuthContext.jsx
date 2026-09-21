@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import api from "../api/axios.js";
 
 const AuthContext = createContext(null);
@@ -14,20 +14,39 @@ export const AuthProvider = ({ children }) => {
   });
   const [loading, setLoading] = useState(false);
 
+  // Login step 1: verify password, receive OTP request
   const login = async (email, password) => {
     const { data } = await api.post("/auth/login", { email, password });
+    return data.data; // { requiresOtp: true, email, devOtp?, purpose: "login" }
+  };
+
+  // Login step 2: verify OTP, get token
+  const verifyOtp = async (email, code) => {
+    const { data } = await api.post("/auth/verify-otp", { email, code });
     sessionStorage.setItem("cp_token", data.data.token);
     sessionStorage.setItem("cp_user", JSON.stringify(data.data.user));
     setUser(data.data.user);
     return data.data.user;
   };
 
+  // Register step 1: create user, receive OTP request
   const register = async (payload) => {
     const { data } = await api.post("/auth/register", payload);
+    return data.data; // { requiresOtp: true, email, devOtp?, purpose: "signup" }
+  };
+
+  // Register step 2: verify signup OTP, get token
+  const verifySignup = async (email, code) => {
+    const { data } = await api.post("/auth/verify-signup", { email, code });
     sessionStorage.setItem("cp_token", data.data.token);
     sessionStorage.setItem("cp_user", JSON.stringify(data.data.user));
     setUser(data.data.user);
     return data.data.user;
+  };
+
+  const resendOtp = async (email, purpose = "login") => {
+    const { data } = await api.post("/auth/resend-otp", { email, purpose });
+    return data.data;
   };
 
   const logout = () => {
@@ -60,8 +79,8 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{
-      user, setUser, login, register, logout, loading, setLoading,
-      activeOrg, chooseOrg, updateProfile, refreshUser,
+      user, setUser, login, verifyOtp, register, verifySignup, resendOtp,
+      logout, loading, setLoading, activeOrg, chooseOrg, updateProfile, refreshUser,
     }}>
       {children}
     </AuthContext.Provider>

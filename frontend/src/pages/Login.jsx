@@ -1,107 +1,185 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, LogIn, Car, Users2, MapPinned } from "lucide-react";
+import { Mail, Lock, LogIn, ShieldCheck, RefreshCw } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useToast } from "../components/Toast.jsx";
 
 const validateEmail = (v) => /^\S+@\S+\.\S+$/.test(v);
 const validatePassword = (v) => v.length >= 6;
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, verifyOtp, resendOtp } = useAuth();
   const navigate = useNavigate();
+  const showToast = useToast();
+
+  const [step, setStep] = useState(1);
   const [form, setForm] = useState({ email: "", password: "" });
-  const [touched, setTouched] = useState({ email: false, password: false });
+  const [otp, setOtp] = useState("");
+  const [emailForOtp, setEmailForOtp] = useState("");
+  const [devOtp, setDevOtp] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
-  const emailError = touched.email && form.email && !validateEmail(form.email);
-  const passwordError = touched.password && form.password && !validatePassword(form.password);
-  const canSubmit = validateEmail(form.email) && validatePassword(form.password) && !loading;
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setInterval(() => setResendCooldown((s) => s - 1), 1000);
+    return () => clearInterval(t);
+  }, [resendCooldown]);
 
-  const submit = async (e) => {
+  const canSubmitCreds = validateEmail(form.email) && validatePassword(form.password) && !loading;
+
+  const submitCredentials = async (e) => {
     e.preventDefault();
-    setTouched({ email: true, password: true });
     setError("");
-    if (!canSubmit) return;
+    if (!canSubmitCreds) return;
     try {
       setLoading(true);
-      await login(form.email, form.password);
-      navigate("/organizations");
+      const result = await login(form.email, form.password);
+      setEmailForOtp(result.email);
+      if (result.devOtp) setDevOtp(result.devOtp);
+      setStep(2);
+      setResendCooldown(30);
+      showToast("Verification code sent");
     } catch (err) {
       setError(err.response?.data?.message || "Invalid email or password.");
-    } finally {
-      setLoading(false);
+    } finally { setLoading(false); }
+  };
+
+  const submitOtp = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (otp.length !== 6) { setError("Please enter the 6-digit code"); return; }
+    try {
+      setLoading(true);
+      await verifyOtp(emailForOtp, otp);
+      showToast("Verified — welcome back!");
+      navigate("/organizations");
+    } catch (err) {
+      setError(err.response?.data?.message || "Invalid or expired code.");
+    } finally { setLoading(false); }
+  };
+
+  const handleResend = async () => {
+    if (resendCooldown > 0) return;
+    try {
+      const result = await resendOtp(emailForOtp, "login");
+      if (result.devOtp) setDevOtp(result.devOtp);
+      setResendCooldown(30);
+      showToast("New code sent");
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not resend code");
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10 sm:py-16">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col sm:flex-row">
-        <div className="hidden sm:flex sm:w-2/5 bg-gradient-to-br from-primary to-primary-light text-white p-8 flex-col justify-between">
-          <div className="flex items-center gap-2 font-bold text-lg">
-            <span className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">V</span>
-            Velocity Pool
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold leading-snug mb-3">Ride with people you actually know.</h2>
-            <ul className="space-y-2.5 text-sm text-white/80">
-              <li className="flex items-center gap-2"><Car className="w-4 h-4 shrink-0" /> Every community runs its own pooling server</li>
-              <li className="flex items-center gap-2"><Users2 className="w-4 h-4 shrink-0" /> Admin-approved, private membership</li>
-              <li className="flex items-center gap-2"><MapPinned className="w-4 h-4 shrink-0" /> Route-based trip search & requests</li>
-            </ul>
-          </div>
-          <div className="text-white/40 text-xs">© {new Date().getFullYear()} Velocity Pool</div>
-        </div>
+    <div className="max-w-md mx-auto px-4 py-10 sm:py-16">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 sm:p-8">
+        {step === 1 ? (
+          <>
+            <div className="text-center mb-6">
+              <span className="w-12 h-12 rounded-xl bg-accent text-white flex items-center justify-center text-xl font-bold mb-3 mx-auto">V</span>
+              <h1 className="text-2xl font-bold text-primary dark:text-sky-300">Welcome back</h1>
+              <p className="text-slate-500 text-sm mt-1">Sign in to continue.</p>
+            </div>
 
-        <div className="flex-1 p-6 sm:p-8">
-          <h1 className="text-2xl font-bold mb-1 text-primary dark:text-sky-300">Welcome back</h1>
-          <p className="text-slate-500 text-sm mb-6">Sign in to continue to your dashboard.</p>
-          <form onSubmit={submit} className="space-y-4" noValidate>
-            {error && (
-              <div className="bg-rose-50 text-rose-700 text-sm px-3 py-2 rounded-md flex items-center gap-2">
-                <span>⚠</span> {error}
+            <form onSubmit={submitCredentials} className="space-y-4" noValidate>
+              {error && <div className="bg-rose-50 text-rose-700 text-sm px-3 py-2 rounded-md">⚠ {error}</div>}
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input type="email" value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-900 rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                    placeholder="you@example.com" />
+                </div>
               </div>
-            )}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input type="email" value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  onBlur={() => setTouched((t) => ({ ...t, email: true }))}
-                  className={`w-full border rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 transition ${emailError ? "border-rose-400 focus:ring-rose-200" : "border-slate-300 focus:ring-accent"}`}
-                  placeholder="you@example.com" />
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input type="password" value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-900 rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                    placeholder="••••••••" />
+                </div>
               </div>
-              {emailError && <p className="text-xs text-rose-600 mt-1">Please enter a valid email address.</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input type="password" value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  onBlur={() => setTouched((t) => ({ ...t, password: true }))}
-                  className={`w-full border rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 transition ${passwordError ? "border-rose-400 focus:ring-rose-200" : "border-slate-300 focus:ring-accent"}`}
-                  placeholder="••••••••" />
+
+              <button disabled={!canSubmitCreds}
+                className="w-full flex items-center justify-center gap-2 bg-accent text-white rounded-md py-2.5 font-medium hover:bg-[#008fad] disabled:opacity-60 disabled:cursor-not-allowed">
+                <LogIn className="w-4 h-4" />
+                {loading ? "Verifying..." : "Continue"}
+              </button>
+
+              <p className="text-sm text-center text-slate-500">
+                New here? <Link to="/register" className="text-accent font-medium hover:underline">Create an account</Link>
+              </p>
+
+              <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400">
+                <p className="font-semibold text-slate-500 mb-2">Demo accounts:</p>
+                <p><code>super@velocity.com</code> / <code>super123</code></p>
+                <p><code>admin@greenride.com</code> / <code>admin123</code></p>
+                <p><code>user@greenride.com</code> / <code>user123</code></p>
               </div>
-              {passwordError && <p className="text-xs text-rose-600 mt-1">Password must be at least 6 characters.</p>}
+            </form>
+          </>
+        ) : (
+          <>
+            <div className="text-center mb-6">
+              <span className="w-12 h-12 rounded-xl bg-accent text-white flex items-center justify-center mx-auto mb-3">
+                <ShieldCheck className="w-6 h-6" />
+              </span>
+              <h1 className="text-2xl font-bold text-primary dark:text-sky-300">Verify your identity</h1>
+              <p className="text-slate-500 text-sm mt-1">
+                We sent a 6-digit code to <strong>{emailForOtp}</strong>
+              </p>
             </div>
-            <button disabled={!canSubmit}
-              className="w-full flex items-center justify-center gap-2 bg-accent text-white rounded-md py-2.5 font-medium hover:bg-[#008fad] disabled:opacity-60 disabled:cursor-not-allowed transition">
-              <LogIn className="w-4 h-4" />
-              {loading ? "Logging in..." : "Login"}
-            </button>
-            <p className="text-sm text-center text-slate-500">
-              New here? <Link to="/register" className="text-accent font-medium hover:underline">Create an account</Link>
-            </p>
-            <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400">
-              <p className="font-semibold text-slate-500 mb-2">Demo accounts:</p>
-              <p><code>super@velocity.com</code> / <code>super123</code> — Super Admin</p>
-              <p><code>admin@greenride.com</code> / <code>admin123</code> — Org Admin</p>
-              <p><code>user@greenride.com</code> / <code>user123</code> — Regular User</p>
-            </div>
-          </form>
-        </div>
+
+            <form onSubmit={submitOtp} className="space-y-4">
+              {error && <div className="bg-rose-50 text-rose-700 text-sm px-3 py-2 rounded-md">⚠ {error}</div>}
+
+              {devOtp && (
+                <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs px-3 py-2 rounded-md">
+                  🧪 <strong>Dev mode:</strong> your code is <code className="font-mono font-bold">{devOtp}</code>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Verification code</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                  className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-900 rounded-md px-3 py-3 text-center text-2xl font-mono tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-accent"
+                  placeholder="000000"
+                  autoFocus
+                />
+              </div>
+
+              <button disabled={otp.length !== 6 || loading}
+                className="w-full bg-accent text-white rounded-md py-2.5 font-medium hover:bg-[#008fad] disabled:opacity-60 disabled:cursor-not-allowed">
+                {loading ? "Verifying..." : "Verify and sign in"}
+              </button>
+
+              <div className="flex items-center justify-between text-sm pt-2">
+                <button type="button" onClick={() => { setStep(1); setOtp(""); setError(""); setDevOtp(""); }}
+                  className="text-slate-500 hover:text-slate-700">
+                  ← Back
+                </button>
+                <button type="button" onClick={handleResend} disabled={resendCooldown > 0}
+                  className="text-accent font-medium hover:underline disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5">
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  {resendCooldown > 0 ? "Resend in " + resendCooldown + "s" : "Resend code"}
+                </button>
+              </div>
+            </form>
+          </>
+        )}
       </div>
     </div>
   );

@@ -1,9 +1,13 @@
 import express from "express";
-import { register, login, getMe, updateProfile, verifyOtp, resendOtp } from "../controllers/authController.js";
+import {
+  register, login, getMe, updateProfile,
+  verifyOtp, verifySignup, resendOtp,
+} from "../controllers/authController.js";
 import { protect } from "../middleware/auth.js";
 
 const router = express.Router();
 router.post("/register", register);
+router.post("/verify-signup", verifySignup);
 router.post("/login", login);
 router.post("/verify-otp", verifyOtp);
 router.post("/resend-otp", resendOtp);
