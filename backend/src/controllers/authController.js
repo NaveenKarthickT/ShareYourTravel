@@ -42,7 +42,7 @@ export const register = asyncHandler(async (req, res) => {
   await Otp.create({ user: user._id, code, expiresAt, purpose: "signup" });
 
   try {
-    await sendOtpEmail(user.email, code, user.name);
+    await sendOtpEmail(user.email, code, user.name, "signup");
   } catch (err) {
     console.error("Failed to send signup OTP:", err.message);
     // Don't fail registration if email fails — user can resend from the OTP screen
@@ -121,7 +121,7 @@ export const login = asyncHandler(async (req, res) => {
   await Otp.create({ user: user._id, code, expiresAt, purpose: "login" });
 
   try {
-    await sendOtpEmail(user.email, code, user.name);
+    await sendOtpEmail(user.email, code, user.name, "login");
   } catch (err) {
     console.error("Failed to send login OTP:", err.message);
     res.status(500);
@@ -188,7 +188,7 @@ export const resendOtp = asyncHandler(async (req, res) => {
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
   await Otp.deleteMany({ user: user._id });
   await Otp.create({ user: user._id, code, expiresAt, purpose });
-  await sendOtpEmail(user.email, code, user.name);
+  await sendOtpEmail(user.email, code, user.name, purpose);
 
   res.json({
     success: true,
@@ -250,7 +250,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   await Otp.create({ user: user._id, code, expiresAt, purpose: "reset" });
 
   try {
-    await sendOtpEmail(user.email, code, user.name);
+    await sendOtpEmail(user.email, code, user.name, "reset");
   } catch (err) {
     console.error("Failed to send reset OTP:", err.message);
     res.status(500);
