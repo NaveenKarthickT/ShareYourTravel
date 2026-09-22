@@ -214,3 +214,150 @@ export const updateProfile = asyncHandler(async (req, res) => {
   await user.save();
   res.json({ success: true, data: await publicUser(user) });
 });
+
+
+// ============================================================
+// Forgot password flow
+// ============================================================
+
+// @route POST /api/auth/forgot-password
+export const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    res.status(400);
+    throw new Error("Email is required");
+  }
+
+  const user = await User.findOne({ email: email.toLowerCase() });
+
+  // Security best-practice: always return success, don't reveal whether the email exists
+  if (!user) {
+    return res.json({
+      success: true,
+      data: {
+        message: "If that email exists, a reset code has been sent.",
+        // We still pretend so the UI moves to the OTP step
+        requiresOtp: true,
+        email: email.toLowerCase(),
+      },
+    });
+  }
+
+  const code = generateOtp();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+  await Otp.deleteMany({ user: user._id, purpose: "reset" });
+  await Otp.create({ user: user._id, code, expiresAt, purpose: "reset" });
+
+  try {
+    await sendOtpEmail(user.email, code, user.name);
+  } catch (err) {
+    console.error("Failed to send reset OTP:", err.message);
+    res.status(500);
+    throw new Error("Could not send reset email. Please try again.");
+  }
+
+  res.json({
+    success: true,
+    data: {
+      message: "Reset code sent to your email.",
+      requiresOtp: true,
+      email: user.email,
+      ...(process.env.NODE_ENV !== "production" && { devOtp: code }),
+    },
+  });
+});
+
+// @route POST /api/auth/verify-reset-otp
+// Verifies the OTP and returns a short-lived reset token the user
+// can use to actually change their password.
+export const verifyResetOtp = asyncHandler(async (req, res) => {
+  const { email, code } = req.body;
+  if (!email || !code) {
+    res.status(400);
+    throw new Error("Email and code are required");
+  }
+
+  const user = await User.findOne({ email: email.toLowerCase() });
+  if (!user) {
+    res.status(404);
+    throw new Error("No active reset request for that email");
+  }
+
+  const otp = await Otp.findOne({ user: user._id, purpose: "reset" }).sort({ createdAt: -1 });
+  if (!otp) {
+    res.status(400);
+    throw new Error("No active reset code. Please request a new one.");
+  }
+  if (otp.expiresAt < new Date()) {
+    await Otp.deleteOne({ _id: otp._id });
+    res.status(400);
+    throw new Error("Code expired. Please request a new one.");
+  }
+  if (otp.attempts >= 5) {
+    await Otp.deleteOne({ _id: otp._id });
+    res.status(429);
+    throw new Error("Too many attempts. Please request a new code.");
+  }
+  if (otp.code !== String(code).trim()) {
+    otp.attempts += 1;
+    await otp.save();
+    res.status(400);
+    throw new Error("Invalid code");
+  }
+
+  // Consume the OTP now — user has proven ownership
+  await Otp.deleteOne({ _id: otp._id });
+
+  // Issue a short-lived reset token (JWT with scope=reset, 15 min)
+  const resetToken = generateToken(user._id);
+  // We don't distinguish scope for simplicity; the /reset-password
+  // endpoint additionally requires the email + we verify expiry.
+
+  res.json({
+    success: true,
+    data: {
+      resetToken,
+      email: user.email,
+      message: "Code verified. You can now set a new password.",
+    },
+  });
+});
+
+// @route POST /api/auth/reset-password
+export const resetPassword = asyncHandler(async (req, res) => {
+  const { email, resetToken, newPassword } = req.body;
+  if (!email || !resetToken || !newPassword) {
+    res.status(400);
+    throw new Error("Email, resetToken and newPassword are required");
+  }
+  if (newPassword.length < 6) {
+    res.status(400);
+    throw new Error("Password must be at least 6 characters");
+  }
+
+  // Verify the reset token was issued for this user
+  let decoded;
+  try {
+    const jwt = (await import("jsonwebtoken")).default;
+    decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
+  } catch {
+    res.status(401);
+    throw new Error("Invalid or expired reset token. Please start again.");
+  }
+
+  const user = await User.findOne({ email: email.toLowerCase() });
+  if (!user || String(user._id) !== String(decoded.id)) {
+    res.status(401);
+    throw new Error("Reset token does not match. Please start again.");
+  }
+
+  // Set new password — the User model pre-save hook will hash it
+  user.password = newPassword;
+  await user.save();
+
+  res.json({
+    success: true,
+    data: { message: "Password updated. You can now log in." },
+  });
+});

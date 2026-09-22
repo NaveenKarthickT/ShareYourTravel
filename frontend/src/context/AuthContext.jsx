@@ -49,6 +49,23 @@ export const AuthProvider = ({ children }) => {
     return data.data;
   };
 
+  const forgotPassword = async (email) => {
+    const { data } = await api.post("/auth/forgot-password", { email });
+    return data.data;
+  };
+
+  const verifyResetOtp = async (email, code) => {
+    const { data } = await api.post("/auth/verify-reset-otp", { email, code });
+    return data.data;
+  };
+
+  const resetPassword = async (email, resetToken, newPassword) => {
+    const { data } = await api.post("/auth/reset-password", {
+      email, resetToken, newPassword,
+    });
+    return data.data;
+  };
+
   const logout = () => {
     sessionStorage.removeItem("cp_token");
     sessionStorage.removeItem("cp_user");
@@ -78,8 +95,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{
-      user, setUser, login, verifyOtp, register, verifySignup, resendOtp,
+    <AuthContext.Provider value={{ user, setUser, login, verifyOtp, register, verifySignup, resendOtp, forgotPassword, verifyResetOtp, resetPassword,
       logout, loading, setLoading, activeOrg, chooseOrg, updateProfile, refreshUser,
     }}>
       {children}

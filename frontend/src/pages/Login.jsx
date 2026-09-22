@@ -165,6 +165,13 @@ export default function Login() {
                   </div>
                 </div>
 
+                <div className="flex items-center justify-end -mt-1">
+                  <Link to="/forgot-password" className="text-xs text-accent hover:underline font-medium">
+                    Forgot password?
+                  </Link>
+                </div>
+
+
                 <button disabled={!canSubmitCreds}
                   className="w-full flex items-center justify-center gap-2 bg-accent text-white rounded-md py-2.5 font-medium hover:bg-[#008fad] disabled:opacity-60 disabled:cursor-not-allowed transition">
                   <LogIn className="w-4 h-4" />
